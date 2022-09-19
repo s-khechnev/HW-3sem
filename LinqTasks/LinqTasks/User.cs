@@ -17,6 +17,7 @@ namespace LinqTasks
             this.Name = name;
             this.Surname = surname;
         }
+
         public override string ToString()
         {
             return string.Format("ID={0}: {1} {2}", ID, Name, Surname);

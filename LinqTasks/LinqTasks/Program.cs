@@ -2,7 +2,7 @@
 
 BusinessLogic businessLogic = new();
 
-foreach (var item in businessLogic.GetUsersPage(-1, 1))
+foreach (var item in businessLogic.GetAllAuthors())
 {
     Console.WriteLine(item.ToString());
 }
