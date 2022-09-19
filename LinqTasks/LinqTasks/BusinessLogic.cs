@@ -23,12 +23,13 @@ namespace LinqTasks
 
         private void InitData()
         {
-            int N = 100;
+            int N = 20;
             Enumerable.Range(0, N).ToList().ForEach(
                 i =>
                 {
-                    User user = new(i, names[i % 5], surnames[i % 5]);
-                    Record record = new(user, messages[i % 5]);
+                    Random rand = new();
+                    User user = new(i, names[rand.Next(names.Length)], surnames[rand.Next(surnames.Length)]);
+                    Record record = new(user, messages[rand.Next(messages.Length)]);
 
                     users.Add(user);
                     records.Add(record);
