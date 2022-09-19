@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LinqTasks
 {
-    class Record
+    public class Record
     {
         public User Author { get; set; }
         public string Message { get; set; }

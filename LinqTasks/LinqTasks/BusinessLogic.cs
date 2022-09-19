@@ -1,40 +1,39 @@
-﻿using System.Collections;
-using System.Xml.Linq;
-
-namespace LinqTasks
+﻿namespace LinqTasks
 {
-    class BusinessLogic
+    public class BusinessLogic
     {
-        private List<User> users = new List<User>();
-        private List<Record> records = new List<Record>();
-
-        private readonly string[] names = new string[] {"Андрей", "Алексей", "Антон", "Борис",
-            "Богдан"};
-
-        private readonly string[] surnames = new string[] {"Абрикосов", "Антонов", "Андреев", "Алексеев",
-            "Борисов"};
-
-        private readonly string[] messages = new string[] { "Привет", "Пока", "Как дела?", "Что делаешь?", "Как прошел день?" };
+        private List<User> users = new();
+        private List<Record> records = new();
 
         public BusinessLogic()
         {
             InitData();
         }
 
+        public BusinessLogic(List<User> users, List<Record> records)
+        {
+            this.users = users;
+            this.records = records;
+        }
+
         private void InitData()
         {
+            string[] names = new string[] {"Андрей", "Алексей", "Антон", "Борис", "Богдан"};
+            string[] surnames = new string[] {"Абрикосов", "Антонов", "Андреев", "Алексеев", "Борисов"};
+            string[] messages = new string[] { "Привет", "Пока", "Как дела?", "Что делаешь?", "Как прошел день?" };
+
             int N = 20;
             Enumerable.Range(0, N).ToList().ForEach(
                 i =>
-                {
-                    Random rand = new();
-                    User user = new(i, names[rand.Next(names.Length)], surnames[rand.Next(surnames.Length)]);
-                    Record record = new(user, messages[rand.Next(messages.Length)]);
+                    {
+                        Random rand = new();
+                        User user = new(i, names[rand.Next(names.Length)], surnames[rand.Next(surnames.Length)]);
+                        Record record = new(user, messages[rand.Next(messages.Length)]);
 
-                    users.Add(user);
-                    records.Add(record);
-                }
-            );
+                        users.Add(user);
+                        records.Add(record);
+                    }
+                );
         }
 
         public List<User> GetUsersBySurname(string surname)

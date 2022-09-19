@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LinqTasks
 {
-    class User
+    public class User
     {
         public int ID { get; set; }
         public string Name { get; set; }
@@ -21,6 +21,16 @@ namespace LinqTasks
         public override string ToString()
         {
             return string.Format("ID={0}: {1} {2}", ID, Name, Surname);
+        }
+
+        public override bool Equals(object? other)
+        {
+            var toCompareWith = other as User;
+            if (toCompareWith == null)
+                return false;
+            return this.Name == toCompareWith.Name &&
+                this.Surname == toCompareWith.Surname && this.ID == toCompareWith.ID;
+
         }
     }
 }
