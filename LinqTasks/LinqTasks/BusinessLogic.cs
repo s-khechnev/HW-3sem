@@ -58,6 +58,7 @@
 
         public List<User> GetAllAuthors()
         {
+            //
             return users.Join(records, user => user, record => record.Author,
                                 (user, record) => new User(
                                 record.Author.ID,
