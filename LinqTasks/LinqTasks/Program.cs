@@ -9,13 +9,11 @@ namespace LinqTasks
         static int IsPerfect(int num)
         {
             int sum = 1;
-            for (int i = 2; i * i < num; i++)
-            {
-                if (num % i == 0)
-                {
-                    sum += i + num / i;
-                }
-            }
+
+            sum += Enumerable.Range(2, (int)Math.Sqrt(num) - 1).Where(n => num % n == 0)
+                    .Select(n => new { FirstDiv = (int)n, SecondDiv = (int)num / n })
+                    .Sum(n => n.FirstDiv + n.SecondDiv);
+
             if (sum == num)
                 return num;
             else
@@ -29,7 +27,7 @@ namespace LinqTasks
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Enumerable.Range(1, N).AsParallel().Select(num => IsPerfect(num)).Where(num => num != -1).ForAll(Console.WriteLine);
+            Enumerable.Range(2, N).AsParallel().Select(num => IsPerfect(num)).Where(num => num != -1).ForAll(Console.WriteLine);
 
             stopwatch.Stop();
 
