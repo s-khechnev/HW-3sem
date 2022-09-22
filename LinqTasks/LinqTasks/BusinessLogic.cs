@@ -18,8 +18,8 @@
 
         private void InitData()
         {
-            string[] names = new string[] {"Андрей", "Алексей", "Антон", "Борис", "Богдан"};
-            string[] surnames = new string[] {"Абрикосов", "Антонов", "Андреев", "Алексеев", "Борисов"};
+            string[] names = new string[] { "Андрей", "Алексей", "Антон", "Борис", "Богдан" };
+            string[] surnames = new string[] { "Абрикосов", "Антонов", "Андреев", "Алексеев", "Борисов" };
             string[] messages = new string[] { "Привет", "Пока", "Как дела?", "Что делаешь?", "Как прошел день?" };
 
             int N = 20;
@@ -58,12 +58,10 @@
 
         public List<User> GetAllAuthors()
         {
-            //
-            return users.Join(records, user => user, record => record.Author,
-                                (user, record) => new User(
-                                record.Author.ID,
-                                record.Author.Name,
-                                record.Author.Surname)).ToList();
+            return (from u in users
+                   join rec in records on u equals rec.Author
+                   select new User(rec.Author.ID, rec.Author.Name, rec.Author.Surname))
+                   .ToList();
         }
 
         public Dictionary<int, User> GetUsersDictionary() => users.ToDictionary(user => user.ID, user => user);
