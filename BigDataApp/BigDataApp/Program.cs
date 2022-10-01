@@ -149,6 +149,8 @@ class Program
             return ans1;
         });
 
+        var ans1 = ansTask1.Result;
+
         var ansTask2 = Task.Factory.StartNew(() =>
         {
             var ans2 = new Dictionary<string, HashSet<Movie>>();
@@ -159,11 +161,11 @@ class Program
                     foreach (var personName in filmdId_category_actors[filmId][keyPersonCategory])
                     {
                         if (ans2.ContainsKey(personName))
-                            ans2[personName].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
+                            ans2[personName].Add(ans1[filmId_filmTitles[filmId].First()]);
                         else
                         {
                             ans2[personName] = new HashSet<Movie>();
-                            ans2[personName].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
+                            ans2[personName].Add(ans1[filmId_filmTitles[filmId].First()]);
                         }
                     }
                 }
@@ -184,11 +186,11 @@ class Program
                 foreach (var tag in filmId_tags[filmId])
                 {
                     if (ans3.ContainsKey(tag))
-                        ans3[tag].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
+                        ans3[tag].Add(ans1[filmId_filmTitles[filmId].First()]);
                     else
                     {
                         ans3[tag] = new HashSet<Movie>();
-                        ans3[tag].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
+                        ans3[tag].Add(ans1[filmId_filmTitles[filmId].First()]);
                     }
                 }
             }
@@ -196,8 +198,6 @@ class Program
             return ans3;
         });
 
-
-        var ans1 = ansTask1.Result;
         var ans2 = ansTask2.Result;
         var ans3 = ansTask3.Result;
     }
