@@ -6,7 +6,7 @@ class Program
     static void Main(string[] args)
     {
         string pathMovieCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\MovieCodes_IMDB.tsv";
-        var movieCodesDict = File.ReadAllLines(pathMovieCodes).Skip(1)
+        var filmId_filmTitles = File.ReadAllLines(pathMovieCodes).Skip(1)
                         .Select(line => line.Split('\t'))
                         .GroupBy(item => item[0])
                         .Select(group => new { Id = group.Key, FilmsInfo = group.Select(filmLine => new { Title = filmLine[2], Language = filmLine[4] }) })
@@ -18,22 +18,22 @@ class Program
             string pathActorsDirectorsNames = @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsNames_IMDB.txt";
             string pathActorsDirectorsCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsCodes_IMDB.tsv";
 
-            var actorsDirectorsNamesDict = File.ReadAllLines(pathActorsDirectorsNames).Skip(1)
+            var personId_personName = File.ReadAllLines(pathActorsDirectorsNames).Skip(1)
                 .Select(line => line.Split('\t'))
                 .ToDictionary(x => x[0], x => x[1]);
 
-            var actorsDirectorsCodesDict = File.ReadAllLines(pathActorsDirectorsCodes).Skip(1)
+            var filmdId_category_actors = File.ReadAllLines(pathActorsDirectorsCodes).Skip(1)
                 .Select(x => x.Split('\t'))
-                .Where(x => movieCodesDict.ContainsKey(x[0]))
+                .Where(x => filmId_filmTitles.ContainsKey(x[0]))
                 .GroupBy(x => new { FilmId = x[0] })
                 .Select(group => new { Key = group.Key, CategoryGroup = group.GroupBy(x => x[3]) })
                 .ToDictionary(x => x.Key.FilmId,
                               x => x.CategoryGroup.ToDictionary(y => y.Key, y =>
-                                  y.Select(z => actorsDirectorsNamesDict.ContainsKey(z[2]) ? actorsDirectorsNamesDict[z[2]] : z[2])
+                                  y.Select(z => personId_personName.ContainsKey(z[2]) ? personId_personName[z[2]] : z[2])
                                   .ToList()
                               ));
 
-            return actorsDirectorsCodesDict;
+            return filmdId_category_actors;
         });
 
         var t2 = Task.Factory.StartNew(() =>
@@ -41,27 +41,27 @@ class Program
             string pathRating = @"C:\Users\s-khechnev\Desktop\ml-latest\Ratings_IMDB.tsv";
 
             var raitingDict = File.ReadAllLines(pathRating).Skip(1).Select(line => line.Split('\t'))
-                                                    .Where(x => movieCodesDict.ContainsKey(x[0]))
+                                                    .Where(x => filmId_filmTitles.ContainsKey(x[0]))
                                                     .ToDictionary(x => x[0], x => x[1]);
 
             var pathLinks = @"C:\Users\s-khechnev\Desktop\ml-latest\links_IMDB_MovieLens.csv";
-            var linksDict = File.ReadAllLines(pathLinks).Skip(1).Select(line => line.Split(','))
+            var id_imdbId = File.ReadAllLines(pathLinks).Skip(1).Select(line => line.Split(','))
                                                            .ToDictionary(x => x[0], x => "tt" + x[1]);
 
             var pathTagCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\TagCodes_MovieLens.csv";
-            var tagCodesDict = File.ReadAllLines(pathTagCodes).Skip(1).Select(line => line.Split(','))
+            var codeTag_Tag = File.ReadAllLines(pathTagCodes).Skip(1).Select(line => line.Split(','))
                                                                 .ToDictionary(x => x[0], x => x[1]);
 
             var pathTagScores = @"C:\Users\s-khechnev\Desktop\ml-latest\TagScores_MovieLens.csv";
 
-            var filmTagsDict = File.ReadAllLines(pathTagScores).Skip(1)
+            var filmId_tags = File.ReadAllLines(pathTagScores).Skip(1)
                                 .Select(line => line.Split(','))
-                                .Where(x => movieCodesDict.ContainsKey(linksDict[x[0]]) && float.Parse(x[2], CultureInfo.InvariantCulture.NumberFormat) > 0.5f)
+                                .Where(x => filmId_filmTitles.ContainsKey(id_imdbId[x[0]]) && float.Parse(x[2], CultureInfo.InvariantCulture.NumberFormat) > 0.5f)
                                 .GroupBy(x => x[0], x => x[1],
-                                            (key, g) => new { Id = linksDict[key], Tags = g.Select(x => tagCodesDict[x]).ToList() })
+                                            (key, g) => new { Id = id_imdbId[key], Tags = g.Select(x => codeTag_Tag[x]).ToList() })
                                 .ToDictionary(x => x.Id, x => x.Tags);
 
-            return Tuple.Create(raitingDict, filmTagsDict);
+            return Tuple.Create(raitingDict, filmId_tags);
         });
 
         //ans
@@ -70,60 +70,60 @@ class Program
         var (raitingDict, filmTagsDict) = t2.Result;
 
         var ans1 = new Dictionary<string, Movie>();
-        foreach (var key in movieCodesDict.Keys)
+        foreach (var filmId in filmId_filmTitles.Keys)
         {
-            foreach (var item in movieCodesDict[key])
+            foreach (var filmTitle in filmId_filmTitles[filmId])
             {
-                var title = item;
+                var title = filmTitle;
                 string raiting = String.Empty;
                 HashSet<string> directors = null;
                 HashSet<string> tags = null;
                 HashSet<string> actors = null;
 
-                if (ans1.ContainsKey(item))//cringe
+                if (ans1.ContainsKey(filmTitle))//cringe
                     continue;
 
-                if (raitingDict.ContainsKey(key))
+                if (raitingDict.ContainsKey(filmId))
                 {
-                    raiting = raitingDict[key];
+                    raiting = raitingDict[filmId];
                 }
-                if (actorsDirectorsCodesDict.ContainsKey(key))
+                if (actorsDirectorsCodesDict.ContainsKey(filmId))
                 {
                     ///cringe
-                    if (actorsDirectorsCodesDict[key].ContainsKey("actor"))
+                    if (actorsDirectorsCodesDict[filmId].ContainsKey("actor"))
                     {
                         if (actors != null)
-                            actors.Union(actorsDirectorsCodesDict[key]["actor"].ToHashSet());
+                            actors.Union(actorsDirectorsCodesDict[filmId]["actor"].ToHashSet());
                         else
-                            actors = actorsDirectorsCodesDict[key]["actor"].ToHashSet();
+                            actors = actorsDirectorsCodesDict[filmId]["actor"].ToHashSet();
                     }
 
-                    if (actorsDirectorsCodesDict[key].ContainsKey("actress"))
+                    if (actorsDirectorsCodesDict[filmId].ContainsKey("actress"))
                     {
                         if (actors != null)
-                            actors.Union(actorsDirectorsCodesDict[key]["actress"].ToHashSet());
+                            actors.Union(actorsDirectorsCodesDict[filmId]["actress"].ToHashSet());
                         else
-                            actors = actorsDirectorsCodesDict[key]["actress"].ToHashSet();
+                            actors = actorsDirectorsCodesDict[filmId]["actress"].ToHashSet();
                     }
 
-                    if (actorsDirectorsCodesDict[key].ContainsKey("self"))
+                    if (actorsDirectorsCodesDict[filmId].ContainsKey("self"))
                     {
                         if (actors != null)
-                            actors.Union(actorsDirectorsCodesDict[key]["self"].ToHashSet());
+                            actors.Union(actorsDirectorsCodesDict[filmId]["self"].ToHashSet());
                         else
-                            actors = actorsDirectorsCodesDict[key]["self"].ToHashSet();
+                            actors = actorsDirectorsCodesDict[filmId]["self"].ToHashSet();
                     }
                     ///
-                    if (actorsDirectorsCodesDict[key].ContainsKey("director"))
+                    if (actorsDirectorsCodesDict[filmId].ContainsKey("director"))
                     {
-                        directors = actorsDirectorsCodesDict[key]["director"].ToHashSet();
+                        directors = actorsDirectorsCodesDict[filmId]["director"].ToHashSet();
                     }
                 }
-                if (filmTagsDict.ContainsKey(key))
+                if (filmTagsDict.ContainsKey(filmId))
                 {
-                    tags = filmTagsDict[key].ToHashSet();
+                    tags = filmTagsDict[filmId].ToHashSet();
                 }
-                ans1.Add(item,
+                ans1.Add(filmTitle,
                     new Movie()
                     {
                         Title = title,
@@ -131,15 +131,27 @@ class Program
                         Actors = actors,
                         Directors = directors,
                         Tags = tags
-                    }); ;
+                    });
             }
         }
 
-        ans1.Keys.ToList().Where(x => ans1[x].Tags != null).Take(10).ToList().ForEach(x =>
+
+        var ans2 = new Dictionary<string, HashSet<Movie>>();
+
+        /*foreach (var keyFilmId in actorsDirectorsCodesDict.Keys)
         {
-            Console.WriteLine(x);
-            ans1[x].Tags.ToList().ForEach(Console.WriteLine);
-            Console.WriteLine('\n');
-        });
+            foreach (var keyPersonCategory in actorsDirectorsCodesDict[keyFilmId].Keys.Where(x => x != "writer"))
+            {
+                foreach (var personName in actorsDirectorsCodesDict[keyFilmId][keyPersonCategory])
+                {
+                    
+                }
+            }
+        }*/
+
+        foreach (var filmId in filmId_filmTitles.Keys)
+        {
+
+        }
     }
 }
