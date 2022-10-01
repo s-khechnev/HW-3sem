@@ -3,6 +3,70 @@ using System.Globalization;
 
 class Program
 {
+    static Dictionary<string, Dictionary<string, List<string>>> filmdId_category_actors;
+    static Dictionary<string, string> raitingDict;
+    static Dictionary<string, List<string>> filmId_tags;
+
+    static Movie GetMovieByTitleAndFilmId(string filmTitle, string filmId)
+    {
+        var title = filmTitle;
+        string raiting = String.Empty;
+        HashSet<string> directors = null;
+        HashSet<string> tags = null;
+        HashSet<string> actors = null;
+
+        if (raitingDict.ContainsKey(filmId))
+        {
+            raiting = raitingDict[filmId];
+        }
+        if (filmdId_category_actors.ContainsKey(filmId))
+        {
+            ///cringe
+            if (filmdId_category_actors[filmId].ContainsKey("actor"))
+            {
+                if (actors != null)
+                    actors.Union(filmdId_category_actors[filmId]["actor"].ToHashSet());
+                else
+                    actors = filmdId_category_actors[filmId]["actor"].ToHashSet();
+            }
+
+            if (filmdId_category_actors[filmId].ContainsKey("actress"))
+            {
+                if (actors != null)
+                    actors.Union(filmdId_category_actors[filmId]["actress"].ToHashSet());
+                else
+                    actors = filmdId_category_actors[filmId]["actress"].ToHashSet();
+            }
+
+            if (filmdId_category_actors[filmId].ContainsKey("self"))
+            {
+                if (actors != null)
+                    actors.Union(filmdId_category_actors[filmId]["self"].ToHashSet());
+                else
+                    actors = filmdId_category_actors[filmId]["self"].ToHashSet();
+            }
+            ///
+            if (filmdId_category_actors[filmId].ContainsKey("director"))
+            {
+                directors = filmdId_category_actors[filmId]["director"].ToHashSet();
+            }
+        }
+        if (filmId_tags.ContainsKey(filmId))
+        {
+            tags = filmId_tags[filmId].ToHashSet();
+        }
+
+        return new Movie()
+        {
+            Title = title,
+            Rating = raiting,
+            Actors = actors,
+            Directors = directors,
+            Tags = tags
+        };
+    }
+
+
     static void Main(string[] args)
     {
         string pathMovieCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\MovieCodes_IMDB.tsv";
@@ -66,92 +130,75 @@ class Program
 
         //ans
 
-        var actorsDirectorsCodesDict = t1.Result;
-        var (raitingDict, filmTagsDict) = t2.Result;
+        filmdId_category_actors = t1.Result;
+        (raitingDict, filmId_tags) = t2.Result;
 
-        var ans1 = new Dictionary<string, Movie>();
-        foreach (var filmId in filmId_filmTitles.Keys)
+        var ansTask1 = Task.Factory.StartNew(() =>
         {
-            foreach (var filmTitle in filmId_filmTitles[filmId])
+            var ans1 = new Dictionary<string, Movie>();
+            foreach (var filmId in filmId_filmTitles.Keys)
             {
-                var title = filmTitle;
-                string raiting = String.Empty;
-                HashSet<string> directors = null;
-                HashSet<string> tags = null;
-                HashSet<string> actors = null;
+                foreach (var filmTitle in filmId_filmTitles[filmId])
+                {
+                    if (ans1.ContainsKey(filmTitle))//cringe
+                        continue;
+                    ans1.Add(filmTitle, GetMovieByTitleAndFilmId(filmTitle, filmId));
+                }
+            }
 
-                if (ans1.ContainsKey(filmTitle))//cringe
+            return ans1;
+        });
+
+        var ansTask2 = Task.Factory.StartNew(() =>
+        {
+            var ans2 = new Dictionary<string, HashSet<Movie>>();
+            foreach (var filmId in filmdId_category_actors.Keys)
+            {
+                foreach (var keyPersonCategory in filmdId_category_actors[filmId].Keys.Where(x => x != "writer"))
+                {
+                    foreach (var personName in filmdId_category_actors[filmId][keyPersonCategory])
+                    {
+                        if (ans2.ContainsKey(personName))
+                            ans2[personName].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
+                        else
+                        {
+                            ans2[personName] = new HashSet<Movie>();
+                            ans2[personName].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
+                        }
+                    }
+                }
+            }
+
+            return ans2;
+        });
+
+        var ansTask3 = Task.Factory.StartNew(() =>
+        {
+            var ans3 = new Dictionary<string, HashSet<Movie>>();
+
+            foreach (var filmId in filmId_filmTitles.Keys)
+            {
+                if (!filmId_tags.ContainsKey(filmId))
                     continue;
 
-                if (raitingDict.ContainsKey(filmId))
+                foreach (var tag in filmId_tags[filmId])
                 {
-                    raiting = raitingDict[filmId];
-                }
-                if (actorsDirectorsCodesDict.ContainsKey(filmId))
-                {
-                    ///cringe
-                    if (actorsDirectorsCodesDict[filmId].ContainsKey("actor"))
+                    if (ans3.ContainsKey(tag))
+                        ans3[tag].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
+                    else
                     {
-                        if (actors != null)
-                            actors.Union(actorsDirectorsCodesDict[filmId]["actor"].ToHashSet());
-                        else
-                            actors = actorsDirectorsCodesDict[filmId]["actor"].ToHashSet();
+                        ans3[tag] = new HashSet<Movie>();
+                        ans3[tag].Add(GetMovieByTitleAndFilmId(filmId_filmTitles[filmId].First(), filmId));
                     }
-
-                    if (actorsDirectorsCodesDict[filmId].ContainsKey("actress"))
-                    {
-                        if (actors != null)
-                            actors.Union(actorsDirectorsCodesDict[filmId]["actress"].ToHashSet());
-                        else
-                            actors = actorsDirectorsCodesDict[filmId]["actress"].ToHashSet();
-                    }
-
-                    if (actorsDirectorsCodesDict[filmId].ContainsKey("self"))
-                    {
-                        if (actors != null)
-                            actors.Union(actorsDirectorsCodesDict[filmId]["self"].ToHashSet());
-                        else
-                            actors = actorsDirectorsCodesDict[filmId]["self"].ToHashSet();
-                    }
-                    ///
-                    if (actorsDirectorsCodesDict[filmId].ContainsKey("director"))
-                    {
-                        directors = actorsDirectorsCodesDict[filmId]["director"].ToHashSet();
-                    }
-                }
-                if (filmTagsDict.ContainsKey(filmId))
-                {
-                    tags = filmTagsDict[filmId].ToHashSet();
-                }
-                ans1.Add(filmTitle,
-                    new Movie()
-                    {
-                        Title = title,
-                        Rating = raiting,
-                        Actors = actors,
-                        Directors = directors,
-                        Tags = tags
-                    });
-            }
-        }
-
-
-        var ans2 = new Dictionary<string, HashSet<Movie>>();
-
-        /*foreach (var keyFilmId in actorsDirectorsCodesDict.Keys)
-        {
-            foreach (var keyPersonCategory in actorsDirectorsCodesDict[keyFilmId].Keys.Where(x => x != "writer"))
-            {
-                foreach (var personName in actorsDirectorsCodesDict[keyFilmId][keyPersonCategory])
-                {
-                    
                 }
             }
-        }*/
 
-        foreach (var filmId in filmId_filmTitles.Keys)
-        {
+            return ans3;
+        });
 
-        }
+
+        var ans1 = ansTask1.Result;
+        var ans2 = ansTask2.Result;
+        var ans3 = ansTask3.Result;
     }
 }
