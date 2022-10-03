@@ -75,7 +75,7 @@ class Program
                         .GroupBy(x => x[0])
                         .ToDictionary(x => x.Key, x => x.Select(x => x[2]).ToList());
 
-        var actorsTask = Task.Factory.StartNew(() =>
+        var actorsTask = Task.Run(() =>
         {
             string pathActorsDirectorsNames = @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsNames_IMDB.txt";
             string pathActorsDirectorsCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsCodes_IMDB.tsv";
@@ -89,17 +89,19 @@ class Program
                 .Select(x => x.Split('\t'))
                 .Where(x => filmId_filmTitles.ContainsKey(x[0]))
                 .GroupBy(x => x[0])
-                .Select(group => new { idKey = group.Key, CategoryGroupKey = group.GroupBy(x => x[3]) })
+                /*.Select(group => new { idKey = group.Key, CategoryGroupKey = group.GroupBy(x => x[3]) })
                 .ToDictionary(x => x.idKey,
                               x => x.CategoryGroupKey.ToDictionary(y => y.Key, y =>
                                   y.Select(z => personId_personName.ContainsKey(z[2]) ? personId_personName[z[2]] : z[2])
                                   .ToList()
-                              ));
+                              ));*/
+                .ToDictionary(x => x.Key, x => x.GroupBy(x => x[3]).ToDictionary(x => x.Key, x => x.Select(z => personId_personName.ContainsKey(z[2]) ? personId_personName[z[2]] : z[2])
+                                  .ToList()));
 
             return filmdId_category_actors;
         });
 
-        var raitingTask = Task.Factory.StartNew(() =>
+        var raitingTask = Task.Run(() =>
         {
             string pathRating = @"C:\Users\s-khechnev\Desktop\ml-latest\Ratings_IMDB.tsv";
             var raitingDict = File.ReadAllLines(pathRating).Skip(1).Select(line => line.Split('\t'))
@@ -109,7 +111,7 @@ class Program
             return raitingDict;
         });
 
-        var linksIdTask = Task.Factory.StartNew(() =>
+        var linksIdTask = Task.Run(() =>
         {
             var pathLinks = @"C:\Users\s-khechnev\Desktop\ml-latest\links_IMDB_MovieLens.csv";
             var id_imdbId = File.ReadAllLines(pathLinks).Skip(1).Select(line => line.Split(','))
@@ -117,7 +119,7 @@ class Program
             return id_imdbId;
         });
 
-        var codeTagTask = Task.Factory.StartNew(() =>
+        var codeTagTask = Task.Run(() =>
         {
             var pathTagCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\TagCodes_MovieLens.csv";
             var codeTag_Tag = File.ReadAllLines(pathTagCodes).Skip(1).Select(line => line.Split(','))
@@ -126,19 +128,22 @@ class Program
             return codeTag_Tag;
         });
 
-        var tagsTask = Task.Factory.StartNew(() =>
+        var tagsTask = Task.Run(() =>
         {
             var id_imdbId = linksIdTask.Result;
             var codeTag_Tag = codeTagTask.Result;
 
             var pathTagScores = @"C:\Users\s-khechnev\Desktop\ml-latest\TagScores_MovieLens.csv";
 
+            //7013
             var filmId_tags = File.ReadAllLines(pathTagScores).Skip(1)
                                 .Select(line => line.Split(','))
                                 .Where(x => filmId_filmTitles.ContainsKey(id_imdbId[x[0]]) && float.Parse(x[2], CultureInfo.InvariantCulture.NumberFormat) > 0.5f)
-                                .GroupBy(x => x[0], x => x[1],
+                                /*.GroupBy(x => x[0], x => x[1],
                                             (key, g) => new { Id = id_imdbId[key], Tags = g.Select(x => codeTag_Tag[x]).ToList() })
-                                .ToDictionary(x => x.Id, x => x.Tags);
+                                .ToDictionary(x => x.Id, x => x.Tags);*/
+                                .GroupBy(x => x[0])
+                                .ToDictionary(x => id_imdbId[x.Key], x => x.Select(x => codeTag_Tag[x[1]]).ToList());
 
             return filmId_tags;
         });
@@ -160,7 +165,7 @@ class Program
             }
         }
 
-        var ansTask2 = Task.Factory.StartNew(() =>
+        var ansTask2 = Task.Run(() =>
         {
             var ans2 = new Dictionary<string, HashSet<Movie>>();
             foreach (var filmId in filmdId_category_actors.Keys)
@@ -183,7 +188,7 @@ class Program
             return ans2;
         });
 
-        var ansTask3 = Task.Factory.StartNew(() =>
+        var ansTask3 = Task.Run(() =>
         {
             var ans3 = new Dictionary<string, HashSet<Movie>>();
 
