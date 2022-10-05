@@ -11,7 +11,7 @@ class Program
 
     static void RequestLicense()
     {
-        if (random.Next(100) >= 50)
+        if (random.Next(100) >= 30)
             throw new LicenseException("Лицензия не действительна");
         Console.WriteLine("Request license...");
     }
@@ -46,31 +46,44 @@ class Program
 
     static void Main(string[] args)
     {
-        TaskContinuationOptions taskContinuationOptions = TaskContinuationOptions.NotOnFaulted;
-
         Task splashTask = Task.Factory.StartNew(ShowSplash);
 
         Task checkLicenseTask = splashTask.ContinueWith((task) =>
         {
             RequestLicense();
-        }, taskContinuationOptions);
+        }, TaskContinuationOptions.NotOnFaulted);
 
         Task setupMenuesTask = checkLicenseTask.ContinueWith((task) =>
         {
             SetupMenus();
-        }, taskContinuationOptions);
+        }, TaskContinuationOptions.NotOnFaulted);
 
         Task checkUpdateTask = splashTask.ContinueWith((task) =>
         {
-            CheckUpdate();
-        }, taskContinuationOptions);
+            try
+            {
+                CheckUpdate();
+            }
+            catch (InternetException ex)
+            {
+                Console.WriteLine("CheckUpdate() error, " + ex.Message);
+            }
+        }, TaskContinuationOptions.NotOnFaulted);
 
         Task downloadUpdateTask = checkUpdateTask.ContinueWith((task) =>
         {
-            DownloadUpdate();
-        }, taskContinuationOptions);
+            try
+            {
+                DownloadUpdate();
+            }
+            catch (InternetException ex)
+            {
+                Console.WriteLine("DownloadUpdate() error, " + ex.Message);
+            }
 
-        Task.Run(() =>
+        }, TaskContinuationOptions.NotOnFaulted);
+
+        Task.Factory.StartNew(() =>
         {
             try
             {
