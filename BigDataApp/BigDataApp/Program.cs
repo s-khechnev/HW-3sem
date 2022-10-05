@@ -1,4 +1,5 @@
 ﻿using BigDataApp;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -62,7 +63,7 @@ class Program
         };
     }
 
-    //46sec 42 sec
+    //25.31 release split // 18.14 release without split
     static void Main(string[] args)
     {
         Stopwatch stopwatch = new Stopwatch();
@@ -86,14 +87,42 @@ class Program
             string line;
             while ((line = reader.ReadLine()) != null)
             {
-                var s = line.Split('\t');
+                var lineSpan = line.AsSpan();
+
+                int index;
+                index = lineSpan.IndexOf('\t');
+                var filmId = lineSpan.Slice(0, index).ToString();
+                lineSpan = lineSpan.Slice(index + 1);
+
+                index = lineSpan.IndexOf('\t');
+                lineSpan = lineSpan.Slice(index + 1);
+
+                index = lineSpan.IndexOf('\t');
+                var filmTitle = lineSpan.Slice(0, index).ToString();
+                lineSpan = lineSpan.Slice(index + 1);
+
+                index = lineSpan.IndexOf('\t');
+                lineSpan = lineSpan.Slice(index + 1);
+
+                index = lineSpan.IndexOf('\t');
+                var lang = lineSpan.Slice(0, index).ToString();
+
+                if (lang == "en" || lang == "ru")
+                {
+                    if (filmId_filmTitles.ContainsKey(filmId))
+                        filmId_filmTitles[filmId].Add(filmTitle);
+                    else
+                        filmId_filmTitles[filmId] = new List<string> { filmTitle };
+                }
+
+                /*var s = line.Split('\t');
                 if (s[4] == "en" || s[4] == "ru")
                 {
                     if (filmId_filmTitles.ContainsKey(s[0]))
                         filmId_filmTitles[s[0]].Add(s[2]);
                     else
                         filmId_filmTitles[s[0]] = new List<string> { s[2] };
-                }
+                }*/
             }
         }
 
@@ -114,8 +143,18 @@ class Program
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var s = line.Split('\t');
-                    personId_personName.Add(s[0], s[1]);
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf('\t');
+                    var personId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var personName = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    personId_personName[personId] = personName;
                 }
             }
 
@@ -136,27 +175,46 @@ class Program
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var s = line.Split('\t');
-                    if (!filmId_filmTitles.ContainsKey(s[0]))
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf('\t');
+                    var filmId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var personId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var category = lineSpan.Slice(0, index).ToString();
+
+                    if (!filmId_filmTitles.ContainsKey(filmId))
                         continue;
 
-                    var personName = personId_personName.ContainsKey(s[2]) ? personId_personName[s[2]] : s[2];
+                    var personName = personId_personName.ContainsKey(personId) ? personId_personName[personId] : personId;
 
-                    if (filmId_category_actors.ContainsKey(s[0]))
+                    if (filmId_category_actors.ContainsKey(filmId))
                     {
-                        if (filmId_category_actors[s[0]].ContainsKey(s[3]))
+                        if (filmId_category_actors[filmId].ContainsKey(category))
                         {
-                            filmId_category_actors[s[0]][s[3]].Add(personName);
+                            filmId_category_actors[filmId][category].Add(personName);
                         }
                         else
                         {
-                            filmId_category_actors[s[0]][s[3]] = new List<string>() { personName };
+                            filmId_category_actors[filmId][category] = new List<string>() { personName };
                         }
                     }
                     else
                     {
-                        filmId_category_actors[s[0]] = new Dictionary<string, List<string>>();
-                        filmId_category_actors[s[0]][s[3]] = new List<string>() { personName };
+                        filmId_category_actors[filmId] = new Dictionary<string, List<string>>();
+                        filmId_category_actors[filmId][category] = new List<string>() { personName };
                     }
                 }
             }
@@ -179,11 +237,21 @@ class Program
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var s = line.Split('\t');
-                    if (!filmId_filmTitles.ContainsKey(s[0]))
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf('\t');
+                    var filmId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var rait = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    if (!filmId_filmTitles.ContainsKey(filmId))
                         continue;
 
-                    raitingDict[s[0]] = s[1];
+                    raitingDict[filmId] = rait;
                 }
             }
 
@@ -204,8 +272,18 @@ class Program
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var s = line.Split(',');
-                    id_imdbId[s[0]] = string.Concat("tt", s[1]);
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf(',');
+                    var filmId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf(',');
+                    var filmIdImdb = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    id_imdbId[filmId] = string.Concat("tt", filmIdImdb);
                 }
             }
 
@@ -226,8 +304,16 @@ class Program
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var s = line.Split(',');
-                    codeTag_Tag[s[0]] = s[1];
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf(',');
+                    var codeTag = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    var tag = lineSpan.ToString();
+
+                    codeTag_Tag[codeTag] = tag;
                 }
             }
 
@@ -256,18 +342,29 @@ class Program
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var s = line.Split(',');
+                    var lineSpan = line.AsSpan();
 
-                    if (!filmId_filmTitles.ContainsKey(id_imdbId[s[0]]) || !(float.Parse(s[2], CultureInfo.InvariantCulture.NumberFormat) > 0.5f))
+                    int index;
+                    index = lineSpan.IndexOf(',');
+                    var movieId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf(',');
+                    var tagId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    var relevance = lineSpan.ToString();
+
+                    if (!filmId_filmTitles.ContainsKey(id_imdbId[movieId]) || !(float.Parse(relevance, CultureInfo.InvariantCulture.NumberFormat) > 0.5f))
                         continue;
 
-                    if (filmId_tags.ContainsKey(s[0]))
+                    if (filmId_tags.ContainsKey(movieId))
                     {
-                        filmId_tags[s[0]].Add(codeTag_Tag[s[1]]);
+                        filmId_tags[movieId].Add(codeTag_Tag[tagId]);
                     }
                     else
                     {
-                        filmId_tags[s[0]] = new List<string>() { codeTag_Tag[s[1]] };
+                        filmId_tags[movieId] = new List<string>() { codeTag_Tag[tagId] };
                     }
                 }
             }
