@@ -1,6 +1,7 @@
 ﻿using BigDataApp;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 
 class Program
 {
@@ -69,66 +70,171 @@ class Program
 
         string pathMovieCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\MovieCodes_IMDB.tsv";
         //134056
-        var filmId_filmTitles = File.ReadAllLines(pathMovieCodes).AsParallel().Skip(1)
+        /*var filmId_filmTitles = File.ReadAllLines(pathMovieCodes).AsParallel().Skip(1)
                         .Select(line => line.Split('\t'))
                         .Where(item => item[4] == "ru" || item[4] == "en")
                         .GroupBy(x => x[0])
                         .ToDictionary(x => x.Key, x => x.Select(x => x[2]).ToList());
+        */
 
-        var actorsTask = Task.Run(() =>
+        var filmId_filmTitles = new Dictionary<string, List<string>>();
+
+        using (var fs = new FileStream(pathMovieCodes, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024, FileOptions.SequentialScan))
+        using (var reader = new StreamReader(fs))
+        {
+            reader.ReadLine();
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                var s = line.Split('\t');
+                if (s[4] == "en" || s[4] == "ru")
+                {
+                    if (filmId_filmTitles.ContainsKey(s[0]))
+                        filmId_filmTitles[s[0]].Add(s[2]);
+                    else
+                        filmId_filmTitles[s[0]] = new List<string> { s[2] };
+                }
+            }
+        }
+
+
+        var actorsTask = Task.Factory.StartNew(() =>
         {
             string pathActorsDirectorsNames = @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsNames_IMDB.txt";
             string pathActorsDirectorsCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsCodes_IMDB.tsv";
 
-            var personId_personName = File.ReadAllLines(pathActorsDirectorsNames).AsParallel().Skip(1)
+            /*var personId_personName = File.ReadAllLines(pathActorsDirectorsNames).AsParallel().Skip(1)
                 .Select(line => line.Split('\t'))
-                .ToDictionary(x => x[0], x => x[1]);
+                .ToDictionary(x => x[0], x => x[1]);*/
+            var personId_personName = new Dictionary<string, string>();
+            using (var fs = new FileStream(pathActorsDirectorsNames, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024, FileOptions.SequentialScan))
+            using (var reader = new StreamReader(fs))
+            {
+                reader.ReadLine();
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var s = line.Split('\t');
+                    personId_personName.Add(s[0], s[1]);
+                }
+            }
+
 
             //131467 48sec 42 sec
-            var filmdId_category_actors = File.ReadAllLines(pathActorsDirectorsCodes).AsParallel().Skip(1)
+            /*var filmdId_category_actors = File.ReadAllLines(pathActorsDirectorsCodes).AsParallel().Skip(1)
                 .Select(x => x.Split('\t'))
                 .Where(x => filmId_filmTitles.ContainsKey(x[0]))
                 .GroupBy(x => x[0])
-                /*.Select(group => new { idKey = group.Key, CategoryGroupKey = group.GroupBy(x => x[3]) })
-                .ToDictionary(x => x.idKey,
-                              x => x.CategoryGroupKey.ToDictionary(y => y.Key, y =>
-                                  y.Select(z => personId_personName.ContainsKey(z[2]) ? personId_personName[z[2]] : z[2])
-                                  .ToList()
-                              ));*/
                 .ToDictionary(x => x.Key, x => x.GroupBy(x => x[3]).ToDictionary(x => x.Key, x => x.Select(z => personId_personName.ContainsKey(z[2]) ? personId_personName[z[2]] : z[2])
-                                  .ToList()));
+                                  .ToList()));*/
+            var filmId_category_actors = new Dictionary<string, Dictionary<string, List<string>>>();
 
-            return filmdId_category_actors;
-        });
+            using (var fs = new FileStream(pathActorsDirectorsCodes, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024, FileOptions.SequentialScan))
+            using (var reader = new StreamReader(fs))
+            {
+                reader.ReadLine();
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var s = line.Split('\t');
+                    if (!filmId_filmTitles.ContainsKey(s[0]))
+                        continue;
+
+                    var personName = personId_personName.ContainsKey(s[2]) ? personId_personName[s[2]] : s[2];
+
+                    if (filmId_category_actors.ContainsKey(s[0]))
+                    {
+                        if (filmId_category_actors[s[0]].ContainsKey(s[3]))
+                        {
+                            filmId_category_actors[s[0]][s[3]].Add(personName);
+                        }
+                        else
+                        {
+                            filmId_category_actors[s[0]][s[3]] = new List<string>() { personName };
+                        }
+                    }
+                    else
+                    {
+                        filmId_category_actors[s[0]] = new Dictionary<string, List<string>>();
+                        filmId_category_actors[s[0]][s[3]] = new List<string>() { personName };
+                    }
+                }
+            }
+
+            return filmId_category_actors;
+        }, TaskCreationOptions.LongRunning);
 
         var raitingTask = Task.Run(() =>
         {
             string pathRating = @"C:\Users\s-khechnev\Desktop\ml-latest\Ratings_IMDB.tsv";
-            var raitingDict = File.ReadAllLines(pathRating).AsParallel().Skip(1).Select(line => line.Split('\t'))
+            /*var raitingDict = File.ReadAllLines(pathRating).AsParallel().Skip(1).Select(line => line.Split('\t'))
                                         .Where(x => filmId_filmTitles.ContainsKey(x[0]))
-                                        .ToDictionary(x => x[0], x => x[1]);
+                                        .ToDictionary(x => x[0], x => x[1]);*/
+
+            var raitingDict = new Dictionary<string, string>();
+            using (var fs = new FileStream(pathRating, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024, FileOptions.SequentialScan))
+            using (var reader = new StreamReader(fs))
+            {
+                reader.ReadLine();
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var s = line.Split('\t');
+                    if (!filmId_filmTitles.ContainsKey(s[0]))
+                        continue;
+
+                    raitingDict[s[0]] = s[1];
+                }
+            }
 
             return raitingDict;
         });
 
-        var linksIdTask = Task.Run(() =>
+        var linksIdTask = Task.Factory.StartNew(() =>
         {
             var pathLinks = @"C:\Users\s-khechnev\Desktop\ml-latest\links_IMDB_MovieLens.csv";
-            var id_imdbId = File.ReadAllLines(pathLinks).AsParallel().Skip(1).Select(line => line.Split(','))
-                                                           .ToDictionary(x => x[0], x => string.Concat("tt", x[1]));
-            return id_imdbId;
-        });
+            /*var id_imdbId = File.ReadAllLines(pathLinks).AsParallel().Skip(1).Select(line => line.Split(','))
+                                                           .ToDictionary(x => x[0], x => string.Concat("tt", x[1]));*/
 
-        var codeTagTask = Task.Run(() =>
+            var id_imdbId = new Dictionary<string, string>();
+            using (var fs = new FileStream(pathLinks, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024, FileOptions.SequentialScan))
+            using (var reader = new StreamReader(fs))
+            {
+                reader.ReadLine();
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var s = line.Split(',');
+                    id_imdbId[s[0]] = string.Concat("tt", s[1]);
+                }
+            }
+
+            return id_imdbId;
+        }, TaskCreationOptions.LongRunning);
+
+        var codeTagTask = Task.Factory.StartNew(() =>
         {
             var pathTagCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\TagCodes_MovieLens.csv";
-            var codeTag_Tag = File.ReadAllLines(pathTagCodes).AsParallel().Skip(1).Select(line => line.Split(','))
-                                                                .ToDictionary(x => x[0], x => x[1]);
+            /*var codeTag_Tag = File.ReadAllLines(pathTagCodes).AsParallel().Skip(1).Select(line => line.Split(','))
+                                                                .ToDictionary(x => x[0], x => x[1]);*/
+
+            var codeTag_Tag = new Dictionary<string, string>();
+            using (var fs = new FileStream(pathTagCodes, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024, FileOptions.SequentialScan))
+            using (var reader = new StreamReader(fs))
+            {
+                reader.ReadLine();
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var s = line.Split(',');
+                    codeTag_Tag[s[0]] = s[1];
+                }
+            }
 
             return codeTag_Tag;
-        });
+        }, TaskCreationOptions.LongRunning);
 
-        var tagsTask = Task.Run(() =>
+        var tagsTask = Task.Factory.StartNew(() =>
         {
             var id_imdbId = linksIdTask.Result;
             var codeTag_Tag = codeTagTask.Result;
@@ -136,17 +242,38 @@ class Program
             var pathTagScores = @"C:\Users\s-khechnev\Desktop\ml-latest\TagScores_MovieLens.csv";
 
             //7013
-            var filmId_tags = File.ReadAllLines(pathTagScores).AsParallel().Skip(1)
+            /*var filmId_tags = File.ReadAllLines(pathTagScores).AsParallel().Skip(1)
                                 .Select(line => line.Split(','))
                                 .Where(x => filmId_filmTitles.ContainsKey(id_imdbId[x[0]]) && float.Parse(x[2], CultureInfo.InvariantCulture.NumberFormat) > 0.5f)
-                                /*.GroupBy(x => x[0], x => x[1],
-                                            (key, g) => new { Id = id_imdbId[key], Tags = g.Select(x => codeTag_Tag[x]).ToList() })
-                                .ToDictionary(x => x.Id, x => x.Tags);*/
                                 .GroupBy(x => x[0])
-                                .ToDictionary(x => id_imdbId[x.Key], x => x.Select(x => codeTag_Tag[x[1]]).ToList());
+                                .ToDictionary(x => id_imdbId[x.Key], x => x.Select(x => codeTag_Tag[x[1]]).ToList());*/
+
+            var filmId_tags = new Dictionary<string, List<string>>();
+            using (var fs = new FileStream(pathTagScores, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024, FileOptions.SequentialScan))
+            using (var reader = new StreamReader(fs))
+            {
+                reader.ReadLine();
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var s = line.Split(',');
+
+                    if (!filmId_filmTitles.ContainsKey(id_imdbId[s[0]]) || !(float.Parse(s[2], CultureInfo.InvariantCulture.NumberFormat) > 0.5f))
+                        continue;
+
+                    if (filmId_tags.ContainsKey(s[0]))
+                    {
+                        filmId_tags[s[0]].Add(codeTag_Tag[s[1]]);
+                    }
+                    else
+                    {
+                        filmId_tags[s[0]] = new List<string>() { codeTag_Tag[s[1]] };
+                    }
+                }
+            }
 
             return filmId_tags;
-        });
+        }, TaskCreationOptions.LongRunning);
 
         filmdId_category_actors = actorsTask.Result;
         filmId_tags = tagsTask.Result;
