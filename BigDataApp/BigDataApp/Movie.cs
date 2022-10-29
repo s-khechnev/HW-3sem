@@ -53,6 +53,7 @@ namespace BigDataApp
             {
                 builder.Append("no information available");
             }
+            builder.Append("\n");
 
             return builder.ToString();
         }
