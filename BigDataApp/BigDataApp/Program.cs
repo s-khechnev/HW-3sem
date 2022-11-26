@@ -7,8 +7,8 @@ namespace BigDataApp;
 internal static class Program
 {
     private static Dictionary<string, Dictionary<string, List<string>>> _filmIdCategoryActors = new();
-    private static Dictionary<string, string>? _ratingDict;
-    private static Dictionary<string, List<string>>? _filmIdTags;
+    private static Dictionary<string, string>? _ratingDict = new();
+    private static Dictionary<string, List<string>>? _filmIdTags = new();
 
     private static Dictionary<string, List<string>> _filmIdFilmTitles = new();
     private static Dictionary<string, string> _personIdPersonName = new();
@@ -65,21 +65,7 @@ internal static class Program
             Directors = directors,
             Tags = tags
         };
-    }
-
-    private static string GetSubstring(string line, int n, char separator = '\t')
-    {
-        string result = "";
-        var lineSpan = line.AsSpan();
-        for (int i = 0; i <= n; i++)
-        {
-            var index = lineSpan.IndexOf(separator);
-            result = lineSpan.Slice(0, index).ToString();
-            lineSpan = lineSpan.Slice(index + 1);
-        }
-
-        return result;
-    }
+    } 
 
     //25.31 release split // 18.14 release without split
     private static void Main(string[] args)
@@ -99,9 +85,25 @@ internal static class Program
                 string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var filmId = GetSubstring(line, 0);
-                    var filmTitle = GetSubstring(line, 2);
-                    var lang = GetSubstring(line, 4);
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf('\t');
+                    var filmId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var filmTitle = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var lang = lineSpan.Slice(0, index).ToString();
 
                     if (lang == "en" || lang == "ru")
                     {
@@ -127,8 +129,16 @@ internal static class Program
                 string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var personId = GetSubstring(line, 0);
-                    var personName = GetSubstring(line, 1);
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf('\t');
+                    var personId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var personName = lineSpan.Slice(0, index).ToString();
+                    
                     _personIdPersonName[personId] = personName;
                 }
             }
@@ -143,10 +153,26 @@ internal static class Program
                 string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var filmId = GetSubstring(line, 0);
-                    var personId = GetSubstring(line, 2);
-                    var category = GetSubstring(line, 3);
+                    var lineSpan = line.AsSpan();
 
+                    int index;
+                    index = lineSpan.IndexOf('\t');
+                    var filmId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var personId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var category = lineSpan.Slice(0, index).ToString();
+                    
                     if (!filmIdTask.IsCompleted)
                     {
                         filmIdTask.Wait();
@@ -190,8 +216,16 @@ internal static class Program
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var filmId = GetSubstring(line, 0);
-                    var rait = GetSubstring(line, 1);
+                    var lineSpan = line.AsSpan();
+
+                    int index;
+                    index = lineSpan.IndexOf('\t');
+                    var filmId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf('\t');
+                    var rait = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
 
                     if (!filmIdTask.IsCompleted)
                     {
@@ -219,10 +253,18 @@ internal static class Program
                 string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var filmLensId = GetSubstring(line, 0);
-                    var filmImdbId = GetSubstring(line, 1);
+                    var lineSpan = line.AsSpan();
 
-                    idImdbId[filmLensId] = string.Concat("tt", filmImdbId);
+                    int index;
+                    index = lineSpan.IndexOf(',');
+                    var filmLensId = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    index = lineSpan.IndexOf(',');
+                    var filmIdImdb = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    idImdbId[filmLensId] = string.Concat("tt", filmIdImdb);
                 }
             }
 
@@ -242,9 +284,15 @@ internal static class Program
                 string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    var codeTag = GetSubstring(line, 0);
-                    var tag = GetSubstring(line, 1);
+                    var lineSpan = line.AsSpan();
 
+                    int index;
+                    index = lineSpan.IndexOf(',');
+                    var codeTag = lineSpan.Slice(0, index).ToString();
+                    lineSpan = lineSpan.Slice(index + 1);
+
+                    var tag = lineSpan.ToString();
+                    
                     codeTagTag[codeTag] = tag;
                 }
             }
@@ -280,7 +328,7 @@ internal static class Program
                     lineSpan = lineSpan.Slice(index + 1);
 
                     var relevance = lineSpan.ToString();
-
+                    
                     if (!filmIdTask.IsCompleted)
                     {
                         filmIdTask.Wait();
@@ -305,7 +353,7 @@ internal static class Program
         });
 
         _filmIdTags = tagsTask.Result;
-
+        actorsTask.Wait();
         //ans
 
         var ans1 = new Dictionary<string, Movie>();
