@@ -2,17 +2,17 @@
 
 namespace BigDataApp
 {
-    class Movie
+    internal class Movie
     {
-        public string Title { get; set; }
-        public HashSet<string> Actors { get; set; }
-        public HashSet<string> Directors { get; set; }
-        public HashSet<string> Tags { get; set; }
+        public string? Title { get; set; }
+        public HashSet<string>? Actors { get; set; }
+        public HashSet<string>? Directors { get; set; }
+        public HashSet<string>? Tags { get; set; }
         public float Rating { get; set; }
 
         public override string ToString()
         {
-            StringBuilder builder = new StringBuilder($"Title: {Title}\n");
+            var builder = new StringBuilder($"Title: {Title}\n");
 
             if (Actors != null)
             {
@@ -53,7 +53,7 @@ namespace BigDataApp
             {
                 builder.Append("no information available");
             }
-            builder.Append("\n");
+            builder.Append('\n');
 
             return builder.ToString();
         }
