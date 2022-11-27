@@ -2,7 +2,7 @@
 
 namespace BigDataApp
 {
-    internal class Movie
+    public class Movie
     {
         public string? Title { get; set; }
         public HashSet<string>? Actors { get; set; }
@@ -53,6 +53,7 @@ namespace BigDataApp
             {
                 builder.Append("no information available");
             }
+
             builder.Append('\n');
 
             return builder.ToString();
