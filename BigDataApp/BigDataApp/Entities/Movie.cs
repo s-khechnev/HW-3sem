@@ -4,10 +4,11 @@ namespace BigDataApp
 {
     public class Movie
     {
+        public int Id { get; set; }
         public string? Title { get; set; }
-        public HashSet<string>? Actors { get; set; }
-        public HashSet<string>? Directors { get; set; }
-        public HashSet<string>? Tags { get; set; }
+        public HashSet<Actor>? Actors { get; set; }
+        public HashSet<Director>? Directors { get; set; }
+        public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
 
         public override string ToString()

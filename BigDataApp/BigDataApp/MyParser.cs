@@ -16,7 +16,7 @@ public static class MyParser
     public static Dictionary<string, HashSet<Movie>> PersonNameMovies = new();
     public static Dictionary<string, HashSet<Movie>> TagMovies = new();
 
-    private static void Add(string filmId, string category, ref HashSet<string>? actors)
+    private static void Add(string filmId, string category, ref HashSet<string> actors)
     {
         if (_filmIdCategoryActors[filmId].ContainsKey(category))
         {
@@ -27,50 +27,58 @@ public static class MyParser
         }
     }
 
+    private static void AddActors(string filmId, string category, Movie movie)
+    {
+        if (_filmIdCategoryActors[filmId].ContainsKey(category))
+        {
+            foreach (var item in _filmIdCategoryActors[filmId][category])
+            {
+                movie.Actors.Add(new Actor()
+                {
+                    Name = item
+                });
+            }
+        }
+    }
+
     private static Movie GetMovieByTitleAndFilmId(string filmTitle, string filmId)
     {
-        var title = filmTitle;
-        float rating;
-        HashSet<string>? directors = null;
-        HashSet<string>? tags = null;
-        HashSet<string>? actors = null;
+        var result = new Movie();
+        result.Title = filmTitle;
+        result.Actors = new ();
+        result.Directors = new();
 
         if (_ratingDict != null && _ratingDict.ContainsKey(filmId))
         {
-            rating = float.Parse(_ratingDict[filmId], CultureInfo.InvariantCulture.NumberFormat);
+            result.Rating = float.Parse(_ratingDict[filmId], CultureInfo.InvariantCulture.NumberFormat);
         }
         else
         {
-            rating = -1f;
+            result.Rating = -1f;
         }
 
         if (_filmIdCategoryActors.ContainsKey(filmId))
         {
-            Add(filmId, "actor", ref actors);
-            Add(filmId, "actress", ref actors);
-            Add(filmId, "self", ref actors);
+            AddActors(filmId, "actor", result);
+            AddActors(filmId, "actress", result);
+            AddActors(filmId, "self", result);
             if (_filmIdCategoryActors[filmId].ContainsKey("director"))
             {
-                directors = _filmIdCategoryActors[filmId]["director"].ToHashSet();
+                foreach (var item in _filmIdCategoryActors[filmId]["director"])
+                {
+                    result.Directors?.Add(new Director() { Name = item });
+                }
             }
         }
 
         if (_filmIdTags != null && _filmIdTags.ContainsKey(filmId))
         {
-            tags = _filmIdTags[filmId].ToHashSet();
+            result.Tags = _filmIdTags[filmId].Select(x => new Tag(){TagName = x}).ToHashSet();
         }
 
-        return new Movie()
-        {
-            Title = title,
-            Rating = rating,
-            Actors = actors,
-            Directors = directors,
-            Tags = tags
-        };
+        return result;
     }
 
-    //25.31 release split // 18.14 release without split
     public static void Run()
     {
         Console.WriteLine("Parsing...");
@@ -144,9 +152,9 @@ public static class MyParser
                     _personIdPersonName[personId] = personName;
                 }
             }
-            
+
             filmIdTask.Wait();
-            
+
             const string pathActorsDirectorsCodes =
                 @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsCodes_IMDB.tsv";
             using (var fs = new FileStream(pathActorsDirectorsCodes, FileMode.Open, FileAccess.Read, FileShare.None,
@@ -170,7 +178,7 @@ public static class MyParser
                     index = lineSpan.IndexOf('\t');
                     var personId = lineSpan.Slice(0, index).ToString();
                     lineSpan = lineSpan.Slice(index + 1);
-                    
+
                     index = lineSpan.IndexOf('\t');
                     var category = lineSpan.Slice(0, index).ToString();
 
@@ -397,7 +405,7 @@ public static class MyParser
                 }
             }
         });
-        
+
         Task.WaitAll(ansTask2, ansTask3);
         stopwatch.Stop();
 
