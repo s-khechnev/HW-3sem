@@ -1,13 +1,13 @@
 ﻿using System.Text;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace BigDataApp
 {
     public class Movie
     {
         public int Id { get; set; }
-        public string? Title { get; set; }
-        public HashSet<Actor>? Actors { get; set; }
-        public HashSet<Director>? Directors { get; set; }
+        public string Title { get; set; }
+        public HashSet<Person> Persons { get; set; }
         public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
 
@@ -15,24 +15,12 @@ namespace BigDataApp
         {
             var builder = new StringBuilder($"Title: {Title}\n");
 
-            if (Actors != null)
+            if (Persons != null)
             {
-                builder.Append("Actors:\n");
-                Actors.ToList().ForEach(x => builder.Append(string.Concat(x, "\n")));
-            }
-            else
-            {
-                builder.Append("Actors: no information available\n");
-            }
-
-            if (Directors != null)
-            {
-                builder.Append("Directors:\n");
-                Directors.ToList().ForEach(x => builder.Append(string.Concat(x, "\n")));
-            }
-            else
-            {
-                builder.Append("Directors: no information available\n");
+                foreach (var person in Persons)
+                {
+                    builder.Append(person.Name + " = " + person.Category + '\n');
+                }
             }
 
             if (Tags != null)
@@ -58,6 +46,7 @@ namespace BigDataApp
             builder.Append('\n');
 
             return builder.ToString();
+            
         }
     }
 }

@@ -5,38 +5,32 @@ namespace BigDataApp;
 
 public static class MyParser
 {
-    private static Dictionary<string, Dictionary<string, List<string>>> _filmIdCategoryActors = new();
+    private static Dictionary<string, Dictionary<string, List<Person>>> _filmIdCategoryActors = new();
     private static Dictionary<string, string>? _ratingDict = new();
-    private static Dictionary<string, List<string>>? _filmIdTags = new();
+    private static Dictionary<string, List<Tag>>? _filmIdTags = new();
 
     private static Dictionary<string, List<string>> _filmIdFilmTitles = new();
     private static Dictionary<string, string> _personIdPersonName = new();
 
     public static Dictionary<string, Movie> FilmTitleMovie = new();
-    public static Dictionary<string, HashSet<Movie>> PersonNameMovies = new();
-    public static Dictionary<string, HashSet<Movie>> TagMovies = new();
+    public static Dictionary<Person, HashSet<Movie>> DirectorMovies = new();
+    public static Dictionary<Person, HashSet<Movie>> ActorMovies = new();
+    public static Dictionary<Tag, HashSet<Movie>> TagMovies = new();
 
-    private static void Add(string filmId, string category, ref HashSet<string> actors)
-    {
-        if (_filmIdCategoryActors[filmId].ContainsKey(category))
-        {
-            if (actors != null)
-                actors = actors.Union(_filmIdCategoryActors[filmId][category]).ToHashSet();
-            else
-                actors = new HashSet<string>(_filmIdCategoryActors[filmId][category]);
-        }
-    }
-
-    private static void AddActors(string filmId, string category, Movie movie)
+    private static void AddPersons(string filmId, string category, Movie movie)
     {
         if (_filmIdCategoryActors[filmId].ContainsKey(category))
         {
             foreach (var item in _filmIdCategoryActors[filmId][category])
             {
-                movie.Actors.Add(new Actor()
+                if (category == "director")
                 {
-                    Name = item
-                });
+                    movie.Persons.Add(item);
+                }
+                else
+                {
+                    movie.Persons.Add(item);
+                }
             }
         }
     }
@@ -45,8 +39,7 @@ public static class MyParser
     {
         var result = new Movie();
         result.Title = filmTitle;
-        result.Actors = new ();
-        result.Directors = new();
+        result.Persons = new();
 
         if (_ratingDict != null && _ratingDict.ContainsKey(filmId))
         {
@@ -59,21 +52,13 @@ public static class MyParser
 
         if (_filmIdCategoryActors.ContainsKey(filmId))
         {
-            AddActors(filmId, "actor", result);
-            AddActors(filmId, "actress", result);
-            AddActors(filmId, "self", result);
-            if (_filmIdCategoryActors[filmId].ContainsKey("director"))
-            {
-                foreach (var item in _filmIdCategoryActors[filmId]["director"])
-                {
-                    result.Directors?.Add(new Director() { Name = item });
-                }
-            }
+            AddPersons(filmId, "actor", result);
+            AddPersons(filmId, "director", result);
         }
 
         if (_filmIdTags != null && _filmIdTags.ContainsKey(filmId))
         {
-            result.Tags = _filmIdTags[filmId].Select(x => new Tag(){TagName = x}).ToHashSet();
+            result.Tags = _filmIdTags[filmId].ToHashSet();
         }
 
         return result;
@@ -182,6 +167,12 @@ public static class MyParser
                     index = lineSpan.IndexOf('\t');
                     var category = lineSpan.Slice(0, index).ToString();
 
+                    if (!(category == "actor" || category == "actress" || category == "self" || category == "director"))
+                        continue;
+
+                    if (category == "actress" || category == "self")
+                        category = "actor";
+
                     if (!_filmIdFilmTitles.ContainsKey(filmId))
                         continue;
 
@@ -193,17 +184,30 @@ public static class MyParser
                     {
                         if (_filmIdCategoryActors[filmId].ContainsKey(category))
                         {
-                            _filmIdCategoryActors[filmId][category].Add(personName);
+                            if (category == "actor")
+                                _filmIdCategoryActors[filmId][category].Add(new Actor() { Name = personName });
+                            if (category == "director")
+                                _filmIdCategoryActors[filmId][category].Add(new Director() { Name = personName });
                         }
                         else
                         {
-                            _filmIdCategoryActors[filmId][category] = new List<string>() { personName };
+                            if (category == "actor")
+                                _filmIdCategoryActors[filmId][category] = new List<Person>()
+                                    { new Actor() { Name = personName } };
+                            if (category == "director")
+                                _filmIdCategoryActors[filmId][category] = new List<Person>()
+                                    { new Director() { Name = personName } };
                         }
                     }
                     else
                     {
-                        _filmIdCategoryActors[filmId] = new Dictionary<string, List<string>>();
-                        _filmIdCategoryActors[filmId][category] = new List<string>() { personName };
+                        _filmIdCategoryActors[filmId] = new Dictionary<string, List<Person>>();
+                        if (category == "actor")
+                            _filmIdCategoryActors[filmId][category] = new List<Person>()
+                                { new Actor() { Name = personName } };
+                        if (category == "director")
+                            _filmIdCategoryActors[filmId][category] = new List<Person>()
+                                { new Director() { Name = personName } };
                     }
                 }
             }
@@ -275,7 +279,7 @@ public static class MyParser
         {
             var pathTagCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\TagCodes_MovieLens.csv";
 
-            var codeTagTag = new Dictionary<string, string>();
+            var codeTagTag = new Dictionary<string, Tag>();
             using (var fs = new FileStream(pathTagCodes, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024,
                        FileOptions.SequentialScan))
             using (var reader = new StreamReader(fs))
@@ -293,7 +297,7 @@ public static class MyParser
 
                     var tag = lineSpan.ToString();
 
-                    codeTagTag[codeTag] = tag;
+                    codeTagTag[codeTag] = new Tag() { Name = tag };
                 }
             }
 
@@ -307,7 +311,6 @@ public static class MyParser
 
             var pathTagScores = @"C:\Users\s-khechnev\Desktop\ml-latest\TagScores_MovieLens.csv";
 
-            var filmIdTags = new Dictionary<string, List<string>>();
             using (var fs = new FileStream(pathTagScores, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024,
                        FileOptions.SequentialScan))
             using (var reader = new StreamReader(fs))
@@ -337,21 +340,18 @@ public static class MyParser
                         !(float.Parse(relevance, CultureInfo.InvariantCulture.NumberFormat) > 0.5f))
                         continue;
 
-                    if (filmIdTags.ContainsKey(movieId))
+                    if (_filmIdTags.ContainsKey(idImdbId[movieId]))
                     {
-                        filmIdTags[idImdbId[movieId]].Add(codeTagTag[tagId]);
+                        _filmIdTags[idImdbId[movieId]].Add(codeTagTag[tagId]);
                     }
                     else
                     {
-                        filmIdTags[idImdbId[movieId]] = new List<string>() { codeTagTag[tagId] };
+                        _filmIdTags[idImdbId[movieId]] = new List<Tag>() { codeTagTag[tagId] };
                     }
                 }
             }
-
-            return filmIdTags;
         });
 
-        _filmIdTags = tagsTask.Result;
         Task.WaitAll(actorsTask, ratingTask, tagsTask, codeTagTask, filmIdTask, linksIdTask);
         //ans
 
@@ -372,15 +372,12 @@ public static class MyParser
             {
                 foreach (var keyPersonCategory in _filmIdCategoryActors[filmId].Keys)
                 {
-                    foreach (var personName in _filmIdCategoryActors[filmId][keyPersonCategory])
+                    foreach (var person in _filmIdCategoryActors[filmId][keyPersonCategory])
                     {
-                        if (PersonNameMovies.ContainsKey(personName))
-                            PersonNameMovies[personName].Add(FilmTitleMovie[_filmIdFilmTitles[filmId].First()]);
-                        else
-                        {
-                            PersonNameMovies[personName] = new HashSet<Movie>();
-                            PersonNameMovies[personName].Add(FilmTitleMovie[_filmIdFilmTitles[filmId].First()]);
-                        }
+                        if (keyPersonCategory == "director")
+                            AddToPersonDict(filmId, person, DirectorMovies);
+                        else if (keyPersonCategory == "actor")
+                            AddToPersonDict(filmId, person, ActorMovies);
                     }
                 }
             }
@@ -416,5 +413,16 @@ public static class MyParser
 
         Console.WriteLine(elapsedTime);
         Console.WriteLine("Complete parsing");
+    }
+
+    private static void AddToPersonDict(string filmId, Person personName, Dictionary<Person, HashSet<Movie>> dict)
+    {
+        if (dict.ContainsKey(personName))
+            dict[personName].Add(FilmTitleMovie[_filmIdFilmTitles[filmId].First()]);
+        else
+        {
+            dict[personName] = new HashSet<Movie>();
+            dict[personName].Add(FilmTitleMovie[_filmIdFilmTitles[filmId].First()]);
+        }
     }
 }
