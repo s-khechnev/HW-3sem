@@ -45,37 +45,46 @@ using (var dataContext = new DataContext())
         if (line == null)
             continue;
 
+        IQueryable<Movie> movies;
+        
         switch (line.ToLower())
         {
             case "film":
                 
                 line = Console.ReadLine();
-                List<Movie> searchMovies = dataContext.Movies.Include(x => x.Persons)
-                    .Include(x => x.Tags).Where(x => x.Title.ToLower() == line.ToLower()).ToList();
-                searchMovies.ForEach(Console.WriteLine);
+                movies = dataContext.Movies
+                    .Include(x => x.Persons)
+                    .Include(x => x.Tags)
+                    .Where(x => x.Title.ToLower() == line.ToLower());
+                
+                movies.ToList().ForEach(Console.WriteLine);
                 
                 break;
             case "person":
                 
                 line = Console.ReadLine();
-                List<Person> searchPersons = dataContext.Persons
+                /*List<Person> searchPersons = dataContext.Persons
                     .Include(x => x.Movies)
                     .Where(x => x.Name.ToLower() == line.ToLower()).ToList();
-                searchPersons.ForEach(Console.WriteLine);
+                searchPersons.ForEach(Console.WriteLine);*/
+
+                movies = dataContext.Movies
+                    .Include(x => x.Persons)
+                    .Include(x => x.Tags)
+                    .Where(x => x.Persons.Any(p => p.Name.ToLower() == line.ToLower()));
+                
+                movies.ToList().ForEach(Console.WriteLine);
                 
                 break;
             case "tag":
                 
                 line = Console.ReadLine();
-                var movies = dataContext.Movies
+                movies = dataContext.Movies
                     .Include(x => x.Tags)
                     .Include(x => x.Persons)
-                    .Where(x => x.Tags.Select(x => x.Name).Contains(line.ToLower()));
+                    .Where(x => x.Tags.Any(t => t.Name.ToLower() == line.ToLower()));
 
-                foreach (var movie in movies)
-                {
-                    Console.WriteLine(movie);
-                }
+                movies.ToList().ForEach(Console.WriteLine);
                 
                 /*var movie = dataContext.Tags
                     .Include(x => x.Movies)

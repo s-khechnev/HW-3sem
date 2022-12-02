@@ -7,7 +7,7 @@ namespace BigDataApp
     {
         public int Id { get; set; }
         public string Title { get; set; }
-        public HashSet<Person> Persons { get; set; }
+        public HashSet<Person>? Persons { get; set; }
         public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
 
@@ -15,7 +15,7 @@ namespace BigDataApp
         {
             var builder = new StringBuilder($"Title: {Title}\n");
 
-            if (Persons != null)
+            if (Persons != null && Persons.Count != 0)
             {
                 foreach (var person in Persons)
                 {
@@ -23,7 +23,7 @@ namespace BigDataApp
                 }
             }
 
-            if (Tags != null)
+            if (Tags != null && Tags.Count != 0)
             {
                 builder.Append("Tags:\n");
                 Tags.ToList().ForEach(x => builder.Append(string.Concat(x, "\n")));
