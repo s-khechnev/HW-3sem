@@ -15,11 +15,11 @@ void ReinitDb()
         dataContext.Database.EnsureDeleted();
         dataContext.Database.EnsureCreated();
 
-        dataContext.Movies.AddRange(MyParser.FilmTitleMovie.Values);
-        dataContext.Persons.AddRange(MyParser.ActorMovies.Keys);
-        dataContext.Persons.AddRange(MyParser.DirectorMovies.Keys);
-        dataContext.Tags.AddRange(MyParser.TagMovies.Keys);
-        dataContext.Top10s.AddRange(MyParser.tops);
+        dataContext.Movies.AddRange(MyParser.FilmTitleMovie.Values
+            .Where(x => x.Persons != null && Math.Abs(x.Rating - (-1)) > float.Epsilon && x.Tags != null));
+        dataContext.Persons.AddRange(MyParser.ActorMovies.Keys.Where(x => x.Movies != null));
+        dataContext.Persons.AddRange(MyParser.DirectorMovies.Keys.Where(x => x.Movies != null));
+        dataContext.Tags.AddRange(MyParser.TagMovies.Keys.Where(x => x.Movies != null));
 
         dataContext.SaveChanges();
         stopwatch.Stop();
@@ -33,7 +33,7 @@ void ReinitDb()
     }
 }
 
-using (var dataContext = new DataContext())
+/*using (var dataContext = new DataContext())
 {
     while (true)
     {
@@ -53,7 +53,6 @@ using (var dataContext = new DataContext())
                 movies = dataContext.Movies
                     .Include(x => x.Persons)
                     .Include(x => x.Tags)
-                    .Include(x => x.Top10)
                     .Where(x => x.Title.ToLower() == line.ToLower());
                 
                 movies.ToList().ForEach(Console.WriteLine);
@@ -88,29 +87,28 @@ using (var dataContext = new DataContext())
 
         Console.WriteLine();
     }
-}
+}*/
 
-/*var dataContext = new DataContext();
+var dataContext = new DataContext();
 
 dataContext.Database.EnsureDeleted();
 dataContext.Database.EnsureCreated();
 
-var top1 = new Top10();
-var top2 = new Top10();
-var top3 = new Top10();
+var movie1 = new Movie() { Title = "Movie1" };
+var movie2 = new Movie() { Title = "Movie2" };
+var movie3 = new Movie() { Title = "Movie3" };
 
-var movie1 = new Movie() { Title = "Movie1", Top10 = top1 };
-var movie2 = new Movie() { Title = "Movie2", Top10 = top1 };
-var movie3 = new Movie() { Title = "Movie3", Top10 = top2 };
+movie1.Top = new HashSet<Movie>() { movie2, movie3 };
+movie2.Top = new HashSet<Movie>() { movie1, movie3 };
+movie3.Top = new HashSet<Movie>() { movie1, movie2 };
 
 dataContext.Movies.AddRange(movie1, movie2, movie3);
-dataContext.Top10s.AddRange(top1, top2, top3);
 
 dataContext.SaveChanges();
 
-var t = dataContext.Movies.Include(x => x.Top10);
+var t = dataContext.Movies;
 
 foreach (var item in t)
 {
     Console.WriteLine(item);
-}*/
+}

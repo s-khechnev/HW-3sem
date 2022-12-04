@@ -7,7 +7,7 @@ public sealed class DataContext : DbContext
     public DbSet<Person> Persons { get; set; }
     public DbSet<Movie> Movies { get; set; }
     public DbSet<Tag> Tags { get; set; }
-    public DbSet<Top10> Top10s { get; set; }
+    
 
     public DataContext()
     {
@@ -20,9 +20,13 @@ public sealed class DataContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
+        base.OnModelCreating(builder);
+        
         builder.Entity<Actor>();
         builder.Entity<Director>();
-
-        base.OnModelCreating(builder);
+        
+        builder.Entity<Movie>()
+            .HasMany(p => p.Top)
+            .WithMany();
     }
 }

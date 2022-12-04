@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+﻿using System.Text;
 
 namespace BigDataApp
 {
@@ -10,9 +8,8 @@ namespace BigDataApp
         public string Title { get; set; }
         public HashSet<Person>? Persons { get; set; }
         public HashSet<Tag>? Tags { get; set; }
-        public int Top10Id { get; set; }
-        public Top10? Top10 { get; set; }
         public float Rating { get; set; }
+        public HashSet<Movie>? Top { get; set; }
 
         public float GetEstimation(Movie other)
         {
@@ -80,17 +77,26 @@ namespace BigDataApp
                 builder.Append("no information available\n");
             }
 
-            if (Top10 != null)
+            /*if (Top10s != null)
             {
                 builder.Append("Top10: \n");
-                foreach (var movie in Top10.Movies)
+                foreach (var top in Top10s)
                 {
-                    builder.Append(movie.Title + '\n');
+                    builder.Append(top + '\n');
                 }
             }
             else
             {
                 builder.Append("Top10: no information available");
+            }*/
+
+            if (Top != null)
+            {
+                builder.Append("Top10:\n");
+                foreach (var movie in Top)
+                {
+                    builder.Append(movie.Title + '\n');
+                }
             }
 
             return builder.ToString();

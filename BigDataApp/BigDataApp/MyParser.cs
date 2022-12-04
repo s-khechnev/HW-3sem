@@ -417,7 +417,7 @@ public static class MyParser
 
         Console.WriteLine("Complete answers dictionary");
         
-        Parallel.ForEach(FilmTitleMovie.Values.Take(10000), item =>
+        /*Parallel.ForEach(FilmTitleMovie.Values.Take(10000), item =>
         {
             Dictionary<float, HashSet<Movie>> estimationMovies = new();
             foreach (var movie in FilmTitleMovie.Values.Take(10000))
@@ -456,10 +456,10 @@ public static class MyParser
                     break;
             }
 
-            item.Top10 = t;
+            //item.Top10 = t;
 
             tops.Add(t);
-        });
+        });*/
 
         stopwatch.Stop();
 
