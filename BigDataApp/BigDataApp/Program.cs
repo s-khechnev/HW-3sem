@@ -33,8 +33,6 @@ void ReinitDb()
     }
 }
 
-ReinitDb();
-
 using (var dataContext = new DataContext())
 {
     while (true)
