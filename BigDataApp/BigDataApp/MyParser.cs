@@ -9,6 +9,8 @@ public static class MyParser
     private static Dictionary<string, string>? _ratingDict = new();
     private static Dictionary<string, List<Tag>>? _filmIdTags = new();
 
+    private static Dictionary<string, string> _filmTitleFilmId = new();
+
     private static Dictionary<string, List<string>> _filmIdFilmTitles = new();
     private static Dictionary<string, string> _personIdPersonName = new();
 
@@ -16,6 +18,7 @@ public static class MyParser
     public static Dictionary<Person, HashSet<Movie>> DirectorMovies = new();
     public static Dictionary<Person, HashSet<Movie>> ActorMovies = new();
     public static Dictionary<Tag, HashSet<Movie>> TagMovies = new();
+    public static List<Top10> tops = new();
 
     private static void AddPersons(string filmId, string category, Movie movie)
     {
@@ -104,9 +107,16 @@ public static class MyParser
                     if (lang == "en" || lang == "ru")
                     {
                         if (_filmIdFilmTitles.ContainsKey(filmId))
+                        {
                             _filmIdFilmTitles[filmId].Add(filmTitle);
+                        }
                         else
+                        {
                             _filmIdFilmTitles[filmId] = new List<string> { filmTitle };
+                        }
+
+                        if (!_filmTitleFilmId.ContainsKey(filmTitle))
+                            _filmTitleFilmId.Add(filmTitle, filmId);
                     }
                 }
             }
@@ -404,6 +414,53 @@ public static class MyParser
         });
 
         Task.WaitAll(ansTask2, ansTask3);
+
+        Console.WriteLine("Complete answers dictionary");
+        
+        Parallel.ForEach(FilmTitleMovie.Values.Take(10000), item =>
+        {
+            Dictionary<float, HashSet<Movie>> estimationMovies = new();
+            foreach (var movie in FilmTitleMovie.Values.Take(10000))
+            {
+                if (item == movie)
+                    continue;
+
+                if (_filmTitleFilmId[item.Title] == _filmTitleFilmId[movie.Title])
+                    continue;
+
+                var estimation = item.GetEstimation(movie);
+
+                if (estimationMovies.ContainsKey(estimation))
+                    estimationMovies[estimation].Add(movie);
+                else
+                    estimationMovies.Add(estimation, new HashSet<Movie>() { movie });
+            }
+
+            int k = 0;
+
+            var t = new Top10();
+            t.Movies = new HashSet<Movie>();
+
+            var orderedDict = estimationMovies.OrderByDescending(x => x.Key);
+            foreach (var estMovie in estimationMovies)
+            {
+                foreach (var film in estMovie.Value)
+                {
+                    t.Movies?.Add(film);
+                    k++;
+                    if (k == 10)
+                        break;
+                }
+
+                if (k == 10)
+                    break;
+            }
+
+            item.Top10 = t;
+
+            tops.Add(t);
+        });
+
         stopwatch.Stop();
 
         TimeSpan ts = stopwatch.Elapsed;

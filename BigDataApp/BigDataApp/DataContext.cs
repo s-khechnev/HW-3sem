@@ -2,12 +2,13 @@
 
 namespace BigDataApp;
 
-public sealed class DataContext:DbContext
+public sealed class DataContext : DbContext
 {
-    public DbSet<Person> Persons { get; set; } = null!;
-    public DbSet<Movie> Movies { get; set; } = null!;
-    public DbSet<Tag> Tags { get; set; } = null!;
-    
+    public DbSet<Person> Persons { get; set; }
+    public DbSet<Movie> Movies { get; set; }
+    public DbSet<Tag> Tags { get; set; }
+    public DbSet<Top10> Top10s { get; set; }
+
     public DataContext()
     {
     }
@@ -16,7 +17,7 @@ public sealed class DataContext:DbContext
     {
         optionsBuilder.UseNpgsql("server=localhost;Port=5432;database=bigDataAppDB;userId=test;password=12345");
     }
-    
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         builder.Entity<Actor>();

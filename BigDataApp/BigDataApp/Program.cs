@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Threading.Channels;
 using BigDataApp;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +19,7 @@ void ReinitDb()
         dataContext.Persons.AddRange(MyParser.ActorMovies.Keys);
         dataContext.Persons.AddRange(MyParser.DirectorMovies.Keys);
         dataContext.Tags.AddRange(MyParser.TagMovies.Keys);
+        dataContext.Top10s.AddRange(MyParser.tops);
 
         dataContext.SaveChanges();
         stopwatch.Stop();
@@ -33,7 +33,7 @@ void ReinitDb()
     }
 }
 
-//ReinitDb();
+ReinitDb();
 
 using (var dataContext = new DataContext())
 {
@@ -55,6 +55,7 @@ using (var dataContext = new DataContext())
                 movies = dataContext.Movies
                     .Include(x => x.Persons)
                     .Include(x => x.Tags)
+                    .Include(x => x.Top10)
                     .Where(x => x.Title.ToLower() == line.ToLower());
                 
                 movies.ToList().ForEach(Console.WriteLine);
@@ -63,11 +64,6 @@ using (var dataContext = new DataContext())
             case "person":
                 
                 line = Console.ReadLine();
-                /*List<Person> searchPersons = dataContext.Persons
-                    .Include(x => x.Movies)
-                    .Where(x => x.Name.ToLower() == line.ToLower()).ToList();
-                searchPersons.ForEach(Console.WriteLine);*/
-
                 movies = dataContext.Movies
                     .Include(x => x.Persons)
                     .Include(x => x.Tags)
@@ -85,19 +81,7 @@ using (var dataContext = new DataContext())
                     .Where(x => x.Tags.Any(t => t.Name.ToLower() == line.ToLower()));
 
                 movies.ToList().ForEach(Console.WriteLine);
-                
-                /*var movie = dataContext.Tags
-                    .Include(x => x.Movies)
-                    .Where(x => x.Name == line.ToLower());
 
-                foreach (var item in movie)
-                {
-                    foreach (var t in item.Movies)
-                    {
-                        Console.WriteLine(t);
-                    }
-                }*/
-                
                 break;
             case "reinit":
                 ReinitDb();
@@ -107,3 +91,28 @@ using (var dataContext = new DataContext())
         Console.WriteLine();
     }
 }
+
+/*var dataContext = new DataContext();
+
+dataContext.Database.EnsureDeleted();
+dataContext.Database.EnsureCreated();
+
+var top1 = new Top10();
+var top2 = new Top10();
+var top3 = new Top10();
+
+var movie1 = new Movie() { Title = "Movie1", Top10 = top1 };
+var movie2 = new Movie() { Title = "Movie2", Top10 = top1 };
+var movie3 = new Movie() { Title = "Movie3", Top10 = top2 };
+
+dataContext.Movies.AddRange(movie1, movie2, movie3);
+dataContext.Top10s.AddRange(top1, top2, top3);
+
+dataContext.SaveChanges();
+
+var t = dataContext.Movies.Include(x => x.Top10);
+
+foreach (var item in t)
+{
+    Console.WriteLine(item);
+}*/
