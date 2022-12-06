@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text;
 
 namespace BigDataApp
 {
@@ -9,7 +10,19 @@ namespace BigDataApp
         public HashSet<Person>? Persons { get; set; }
         public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
-        public HashSet<Movie>? Top { get; set; }
+
+        public List<Movie>? Top
+        {
+            get
+            {
+                _topList.Sort((a, b) => GetEstimation(b).CompareTo(GetEstimation(a)));
+                return _topList;
+            }
+            set => _topList = value;
+        }
+
+        [NotMapped]
+        private List<Movie> _topList = new();
 
         public float GetEstimation(Movie other)
         {
@@ -20,7 +33,7 @@ namespace BigDataApp
             {
                 HashSet<Person> intersectionPersons = new HashSet<Person>(Persons);
                 intersectionPersons.IntersectWith(other.Persons);
-                personsEstimation = (float)intersectionPersons.Count / (2 * Persons.Count);
+                personsEstimation = (float)intersectionPersons.Count / (4 * Persons.Count);
             }
             else
             {
@@ -31,7 +44,7 @@ namespace BigDataApp
             {
                 HashSet<Tag> intersectionTags = new HashSet<Tag>(Tags);
                 intersectionTags.IntersectWith(other.Tags);
-                tagsEstimation = (float)intersectionTags.Count / (2 * Tags.Count);
+                tagsEstimation = (float)intersectionTags.Count / (4 * Tags.Count);
             }
             else
             {
@@ -41,7 +54,7 @@ namespace BigDataApp
             if (personsEstimation == 0 && tagsEstimation == 0)
                 return -1f;
 
-            return personsEstimation + tagsEstimation /* + Rating / 20 */;
+            return personsEstimation + tagsEstimation + other.Rating / 20;
         }
 
         public override string ToString()
@@ -77,25 +90,14 @@ namespace BigDataApp
                 builder.Append("no information available\n");
             }
 
-            /*if (Top10s != null)
-            {
-                builder.Append("Top10: \n");
-                foreach (var top in Top10s)
-                {
-                    builder.Append(top + '\n');
-                }
-            }
-            else
-            {
-                builder.Append("Top10: no information available");
-            }*/
-
             if (Top != null)
             {
                 builder.Append("Top10:\n");
+                var k = 1;
                 foreach (var movie in Top)
                 {
-                    builder.Append(movie.Title + '\n');
+                    builder.Append($"{k}) {movie.Title} | estimation = {GetEstimation(movie)}\n");
+                    k++;
                 }
             }
 

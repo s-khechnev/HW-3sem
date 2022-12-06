@@ -1,10 +1,10 @@
 ﻿namespace BigDataApp;
 
-public abstract class Person
+public class Person
 {
     public int Id { get; set; }
     public string Name { get; set; }
-    public abstract string Category { get; set; }
+    public string Category { get; set; }
     public HashSet<Movie>? Movies { get; set; }
 
     public override string ToString()
@@ -27,14 +27,4 @@ public abstract class Person
         var other = obj as Person;
         return other != null && other.Name == this.Name;
     }
-}
-
-public class Actor : Person
-{
-    public override string Category { get; set; } = "actor";
-}
-
-public class Director : Person
-{
-    public override string Category { get; set; } = "director";
 }

@@ -4,26 +4,26 @@ using Microsoft.EntityFrameworkCore;
 
 void ReinitDb()
 {
-    var stopwatch = new Stopwatch();
-    stopwatch.Start();
-
     MyParser.Run();
 
     Console.WriteLine("Saving to db...");
+    
+    var stopwatch = new Stopwatch();
+    stopwatch.Start();
+    
     using (var dataContext = new DataContext())
     {
         dataContext.Database.EnsureDeleted();
         dataContext.Database.EnsureCreated();
 
-        dataContext.Movies.AddRange(MyParser.FilmTitleMovie.Values
-            .Where(x => x.Persons != null && Math.Abs(x.Rating - (-1)) > float.Epsilon && x.Tags != null));
-        dataContext.Persons.AddRange(MyParser.ActorMovies.Keys.Where(x => x.Movies != null));
-        dataContext.Persons.AddRange(MyParser.DirectorMovies.Keys.Where(x => x.Movies != null));
-        dataContext.Tags.AddRange(MyParser.TagMovies.Keys.Where(x => x.Movies != null));
+        dataContext.Movies.AddRange(MyParser.FilmTitleMovie.Values);
+        dataContext.Persons.AddRange(MyParser.ActorMovies.Keys);
+        dataContext.Persons.AddRange(MyParser.DirectorMovies.Keys);
+        dataContext.Tags.AddRange(MyParser.TagMovies.Keys);
 
         dataContext.SaveChanges();
         stopwatch.Stop();
-
+        
         TimeSpan ts = stopwatch.Elapsed;
         string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
             ts.Hours, ts.Minutes, ts.Seconds,
@@ -33,7 +33,7 @@ void ReinitDb()
     }
 }
 
-/*using (var dataContext = new DataContext())
+using (var dataContext = new DataContext())
 {
     while (true)
     {
@@ -44,37 +44,66 @@ void ReinitDb()
             continue;
 
         IQueryable<Movie> movies;
-        
+
         switch (line.ToLower())
         {
             case "film":
-                
+
                 line = Console.ReadLine();
+
+                Stopwatch stopwatch = new();
+                stopwatch.Start();
+
                 movies = dataContext.Movies
                     .Include(x => x.Persons)
                     .Include(x => x.Tags)
-                    .Where(x => x.Title.ToLower() == line.ToLower());
-                
+                    .AsSplitQuery()
+                    .Include(x => x.Top)!
+                    .ThenInclude(x => x.Persons)
+                    .AsSplitQuery()
+                    .Include(x => x.Top)!
+                    .ThenInclude(x => x.Tags)
+                    .Where(x => line != null && x.Title.ToLower() == line.ToLower());
+
                 movies.ToList().ForEach(Console.WriteLine);
-                
+
+                stopwatch.Stop();
+                TimeSpan ts = stopwatch.Elapsed;
+                string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+                    ts.Hours, ts.Minutes, ts.Seconds,
+                    ts.Milliseconds / 10);
+                Console.WriteLine(elapsedTime);
+
                 break;
             case "person":
-                
+
                 line = Console.ReadLine();
                 movies = dataContext.Movies
                     .Include(x => x.Persons)
                     .Include(x => x.Tags)
+                    .AsSplitQuery()
+                    .Include(x => x.Top)!
+                    .ThenInclude(x => x.Persons)
+                    .AsSplitQuery()
+                    .Include(x => x.Top)!
+                    .ThenInclude(x => x.Tags)
                     .Where(x => x.Persons.Any(p => p.Name.ToLower() == line.ToLower()));
-                
+
                 movies.ToList().ForEach(Console.WriteLine);
-                
+
                 break;
             case "tag":
-                
+
                 line = Console.ReadLine();
                 movies = dataContext.Movies
-                    .Include(x => x.Tags)
                     .Include(x => x.Persons)
+                    .Include(x => x.Tags)
+                    .AsSplitQuery()
+                    .Include(x => x.Top)!
+                    .ThenInclude(x => x.Persons)
+                    .AsSplitQuery()
+                    .Include(x => x.Top)!
+                    .ThenInclude(x => x.Tags)
                     .Where(x => x.Tags.Any(t => t.Name.ToLower() == line.ToLower()));
 
                 movies.ToList().ForEach(Console.WriteLine);
@@ -87,8 +116,9 @@ void ReinitDb()
 
         Console.WriteLine();
     }
-}*/
+}
 
+/*
 var dataContext = new DataContext();
 
 dataContext.Database.EnsureDeleted();
@@ -111,4 +141,4 @@ var t = dataContext.Movies;
 foreach (var item in t)
 {
     Console.WriteLine(item);
-}
+}*/

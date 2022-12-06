@@ -12,7 +12,7 @@ public static class MyParser
     private static Dictionary<string, string> _filmTitleFilmId = new();
 
     private static Dictionary<string, List<string>> _filmIdFilmTitles = new();
-    private static Dictionary<string, string> _personIdPersonName = new();
+    private static Dictionary<string, Person> _personIdPerson = new();
 
     public static Dictionary<string, Movie> FilmTitleMovie = new();
     public static Dictionary<Person, HashSet<Movie>> DirectorMovies = new();
@@ -143,8 +143,8 @@ public static class MyParser
 
                     index = lineSpan.IndexOf('\t');
                     var personName = lineSpan.Slice(0, index).ToString();
-
-                    _personIdPersonName[personId] = personName;
+                    
+                    _personIdPerson[personId] = new Person() { Name = personName };
                 }
             }
 
@@ -186,38 +186,27 @@ public static class MyParser
                     if (!_filmIdFilmTitles.ContainsKey(filmId))
                         continue;
 
-                    var personName = _personIdPersonName.ContainsKey(personId)
-                        ? _personIdPersonName[personId]
-                        : personId;
+                    var person = _personIdPerson.ContainsKey(personId)
+                        ? _personIdPerson[personId]
+                        : new Person() { Name = personId };
 
+                    person.Category = category;
+                    
                     if (_filmIdCategoryActors.ContainsKey(filmId))
                     {
                         if (_filmIdCategoryActors[filmId].ContainsKey(category))
                         {
-                            if (category == "actor")
-                                _filmIdCategoryActors[filmId][category].Add(new Actor() { Name = personName });
-                            if (category == "director")
-                                _filmIdCategoryActors[filmId][category].Add(new Director() { Name = personName });
+                            _filmIdCategoryActors[filmId][category].Add(person);
                         }
                         else
                         {
-                            if (category == "actor")
-                                _filmIdCategoryActors[filmId][category] = new List<Person>()
-                                    { new Actor() { Name = personName } };
-                            if (category == "director")
-                                _filmIdCategoryActors[filmId][category] = new List<Person>()
-                                    { new Director() { Name = personName } };
+                            _filmIdCategoryActors[filmId][category] = new List<Person>() { person };
                         }
                     }
                     else
                     {
                         _filmIdCategoryActors[filmId] = new Dictionary<string, List<Person>>();
-                        if (category == "actor")
-                            _filmIdCategoryActors[filmId][category] = new List<Person>()
-                                { new Actor() { Name = personName } };
-                        if (category == "director")
-                            _filmIdCategoryActors[filmId][category] = new List<Person>()
-                                { new Director() { Name = personName } };
+                        _filmIdCategoryActors[filmId][category] = new List<Person>() { person };
                     }
                 }
             }
@@ -417,50 +406,8 @@ public static class MyParser
 
         Console.WriteLine("Complete answers dictionary");
         
-        /*Parallel.ForEach(FilmTitleMovie.Values.Take(10000), item =>
-        {
-            Dictionary<float, HashSet<Movie>> estimationMovies = new();
-            foreach (var movie in FilmTitleMovie.Values.Take(10000))
-            {
-                if (item == movie)
-                    continue;
-
-                if (_filmTitleFilmId[item.Title] == _filmTitleFilmId[movie.Title])
-                    continue;
-
-                var estimation = item.GetEstimation(movie);
-
-                if (estimationMovies.ContainsKey(estimation))
-                    estimationMovies[estimation].Add(movie);
-                else
-                    estimationMovies.Add(estimation, new HashSet<Movie>() { movie });
-            }
-
-            int k = 0;
-
-            var t = new Top10();
-            t.Movies = new HashSet<Movie>();
-
-            var orderedDict = estimationMovies.OrderByDescending(x => x.Key);
-            foreach (var estMovie in estimationMovies)
-            {
-                foreach (var film in estMovie.Value)
-                {
-                    t.Movies?.Add(film);
-                    k++;
-                    if (k == 10)
-                        break;
-                }
-
-                if (k == 10)
-                    break;
-            }
-
-            //item.Top10 = t;
-
-            tops.Add(t);
-        });*/
-
+        InitTop10();
+        
         stopwatch.Stop();
 
         TimeSpan ts = stopwatch.Elapsed;
@@ -470,6 +417,64 @@ public static class MyParser
 
         Console.WriteLine(elapsedTime);
         Console.WriteLine("Complete parsing");
+    }
+
+    public static void InitTop10()
+    {
+        Console.WriteLine("Init Top10");
+        var candidates = FilmTitleMovie.Values
+            .Where(m => m.Persons != null && m.Tags != null && Math.Abs(m.Rating - (-1f)) > float.Epsilon);
+
+        int count = 0;
+        Parallel.ForEach(FilmTitleMovie.Values, item =>
+        {
+            Dictionary<float, HashSet<Movie>> estimationMovies = new();
+            Dictionary<string, string> addedMovies = new(); //id -> title
+            foreach (var movie in candidates)
+            {
+                if (item == movie)
+                    continue;
+
+                if (_filmTitleFilmId[item.Title] == _filmTitleFilmId[movie.Title])
+                    continue;
+
+                if (addedMovies.ContainsKey(_filmTitleFilmId[movie.Title]))
+                    continue;
+
+                var estimation = item.GetEstimation(movie);
+
+                if (estimationMovies.ContainsKey(estimation))
+                    estimationMovies[estimation].Add(movie);
+                else
+                    estimationMovies.Add(estimation, new HashSet<Movie>() { movie });
+
+                addedMovies[_filmTitleFilmId[movie.Title]] = movie.Title;
+            }
+
+            int k = 0;
+
+            item.Top = new List<Movie>();
+            var orderedDict = estimationMovies.OrderByDescending(x => x.Key);
+            foreach (var estMovie in orderedDict)
+            {
+                foreach (var film in estMovie.Value)
+                {
+                    item.Top.Add(film);
+                    k++;
+                    if (k == 10)
+                        break;
+                }
+
+                if (k == 10)
+                    break;
+            }
+
+            count++;
+            if (count % 10000 == 0)
+                Console.WriteLine(count);
+        });
+
+        Console.WriteLine("Complete init top10");
     }
 
     private static void AddToPersonDict(string filmId, Person personName, Dictionary<Person, HashSet<Movie>> dict)
