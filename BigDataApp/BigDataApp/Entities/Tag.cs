@@ -1,4 +1,6 @@
-﻿namespace BigDataApp;
+﻿using BigDataApp.Entities;
+
+namespace BigDataApp;
 
 public class Tag
 {

@@ -1,19 +1,22 @@
 ﻿using System.Diagnostics;
 using BigDataApp;
+using BigDataApp.Entities;
 using Microsoft.EntityFrameworkCore;
 
 void ReinitDb()
 {
-    MyParser.Run();
-
-    Console.WriteLine("Saving to db...");
-    
-    var stopwatch = new Stopwatch();
-    stopwatch.Start();
-    
     using (var dataContext = new DataContext())
     {
         dataContext.Database.EnsureDeleted();
+        
+        MyParser.Run(dataContext);
+
+        Console.WriteLine("Saving to db...");
+
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+
+        
         dataContext.Database.EnsureCreated();
 
         dataContext.Movies.AddRange(MyParser.FilmTitleMovie.Values);
@@ -23,7 +26,7 @@ void ReinitDb()
 
         dataContext.SaveChanges();
         stopwatch.Stop();
-        
+
         TimeSpan ts = stopwatch.Elapsed;
         string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
             ts.Hours, ts.Minutes, ts.Seconds,

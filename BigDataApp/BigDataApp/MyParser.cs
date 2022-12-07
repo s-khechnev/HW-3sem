@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using BigDataApp.Entities;
 
 namespace BigDataApp;
 
@@ -18,7 +19,6 @@ public static class MyParser
     public static Dictionary<Person, HashSet<Movie>> DirectorMovies = new();
     public static Dictionary<Person, HashSet<Movie>> ActorMovies = new();
     public static Dictionary<Tag, HashSet<Movie>> TagMovies = new();
-    public static List<Top10> tops = new();
 
     private static void AddPersons(string filmId, string category, Movie movie)
     {
@@ -67,7 +67,7 @@ public static class MyParser
         return result;
     }
 
-    public static void Run()
+    public static void Run(DataContext context)
     {
         Console.WriteLine("Parsing...");
         var stopwatch = new Stopwatch();
@@ -143,7 +143,7 @@ public static class MyParser
 
                     index = lineSpan.IndexOf('\t');
                     var personName = lineSpan.Slice(0, index).ToString();
-                    
+
                     _personIdPerson[personId] = new Person() { Name = personName };
                 }
             }
@@ -191,7 +191,7 @@ public static class MyParser
                         : new Person() { Name = personId };
 
                     person.Category = category;
-                    
+
                     if (_filmIdCategoryActors.ContainsKey(filmId))
                     {
                         if (_filmIdCategoryActors[filmId].ContainsKey(category))
@@ -405,34 +405,57 @@ public static class MyParser
         Task.WaitAll(ansTask2, ansTask3);
 
         Console.WriteLine("Complete answers dictionary");
-        
-        InitTop10();
-        
-        stopwatch.Stop();
 
-        TimeSpan ts = stopwatch.Elapsed;
-        string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
-            ts.Hours, ts.Minutes, ts.Seconds,
-            ts.Milliseconds / 10);
+        //InitTop10();
+        var count = 0;
 
-        Console.WriteLine(elapsedTime);
-        Console.WriteLine("Complete parsing");
-    }
+        Console.WriteLine("Candidates solving");
 
-    public static void InitTop10()
-    {
-        Console.WriteLine("Init Top10");
-        var candidates = FilmTitleMovie.Values
-            .Where(m => m.Persons != null && m.Tags != null && Math.Abs(m.Rating - (-1f)) > float.Epsilon);
+        var candidates = new Dictionary<Movie, HashSet<Movie>>();
+        foreach (var movie in FilmTitleMovie.Values)
+        {
+            if (movie.Tags != null)
+                foreach (var tag in movie.Tags)
+                {
+                    if (candidates.ContainsKey(movie))
+                        candidates[movie].UnionWith(TagMovies[tag].ToHashSet());
+                    else
+                        candidates[movie] = TagMovies[tag].ToHashSet();
+                }
 
-        int count = 0;
+            if (movie.Persons != null)
+                foreach (var person in movie.Persons)
+                {
+                    if (person.Category == "actor")
+                    {
+                        if (candidates.ContainsKey(movie))
+                            candidates[movie].UnionWith(ActorMovies[person]);
+                        else
+                            candidates[movie] = ActorMovies[person];
+                    }
+                    if (person.Category == "director")
+                    {
+                        if (candidates.ContainsKey(movie))
+                            candidates[movie].UnionWith(DirectorMovies[person]);
+                        else
+                            candidates[movie] = DirectorMovies[person];
+                    }
+                }
+        }
+
+        Console.WriteLine("Candidates are done");
+
+        Console.WriteLine("Init top");
         Parallel.ForEach(FilmTitleMovie.Values, item =>
         {
+            if (!candidates.ContainsKey(item))
+                return;
+
             Dictionary<float, HashSet<Movie>> estimationMovies = new();
             Dictionary<string, string> addedMovies = new(); //id -> title
-            foreach (var movie in candidates)
+            foreach (var movie in candidates[item])
             {
-                if (item == movie)
+                if (movie == item)
                     continue;
 
                 if (_filmTitleFilmId[item.Title] == _filmTitleFilmId[movie.Title])
@@ -468,13 +491,25 @@ public static class MyParser
                 if (k == 10)
                     break;
             }
-
+            
             count++;
             if (count % 10000 == 0)
+            {
                 Console.WriteLine(count);
+            }
+                
         });
 
-        Console.WriteLine("Complete init top10");
+        Console.WriteLine("End init top");
+        stopwatch.Stop();
+
+        TimeSpan ts = stopwatch.Elapsed;
+        string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+            ts.Hours, ts.Minutes, ts.Seconds,
+            ts.Milliseconds / 10);
+
+        Console.WriteLine(elapsedTime);
+        Console.WriteLine("Complete parsing");
     }
 
     private static void AddToPersonDict(string filmId, Person personName, Dictionary<Person, HashSet<Movie>> dict)

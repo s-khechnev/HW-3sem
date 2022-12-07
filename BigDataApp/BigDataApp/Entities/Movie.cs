@@ -1,28 +1,16 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
+﻿using System.Text;
 
-namespace BigDataApp
+namespace BigDataApp.Entities
 {
-    public class Movie
+    public sealed class Movie
     {
         public int Id { get; set; }
         public string Title { get; set; }
         public HashSet<Person>? Persons { get; set; }
         public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
-
-        public List<Movie>? Top
-        {
-            get
-            {
-                _topList.Sort((a, b) => GetEstimation(b).CompareTo(GetEstimation(a)));
-                return _topList;
-            }
-            set => _topList = value;
-        }
-
-        [NotMapped]
-        private List<Movie> _topList = new();
+        public List<Movie>? Top { get; set; }
+        public List<Movie> Movies { get; set; }
 
         public float GetEstimation(Movie other)
         {
@@ -31,27 +19,25 @@ namespace BigDataApp
 
             if (other.Persons != null && Persons != null)
             {
-                HashSet<Person> intersectionPersons = new HashSet<Person>(Persons);
-                intersectionPersons.IntersectWith(other.Persons);
-                personsEstimation = (float)intersectionPersons.Count / (4 * Persons.Count);
+                var intersectionPersonCount = Persons.Intersect(other.Persons).Count();
+                personsEstimation = (float)intersectionPersonCount / (4 * Persons.Count);
             }
             else
             {
-                personsEstimation = 0;
+                personsEstimation = 0f;
             }
 
             if (other.Tags != null && Tags != null)
             {
-                HashSet<Tag> intersectionTags = new HashSet<Tag>(Tags);
-                intersectionTags.IntersectWith(other.Tags);
-                tagsEstimation = (float)intersectionTags.Count / (4 * Tags.Count);
+                var intersectionTagsCount = Tags.Intersect(other.Tags).Count();
+                tagsEstimation = (float)intersectionTagsCount / (4 * Tags.Count);
             }
             else
             {
-                tagsEstimation = 0;
+                tagsEstimation = 0f;
             }
 
-            if (personsEstimation == 0 && tagsEstimation == 0)
+            if (personsEstimation == 0f && tagsEstimation == 0f)
                 return -1f;
 
             return personsEstimation + tagsEstimation + other.Rating / 20;
@@ -94,9 +80,11 @@ namespace BigDataApp
             {
                 builder.Append("Top10:\n");
                 var k = 1;
+                Top.Sort((a, b) => GetEstimation(b).CompareTo(GetEstimation(a)));
                 foreach (var movie in Top)
                 {
-                    builder.Append($"{k}) {movie.Title} | estimation = {GetEstimation(movie)}\n");
+                    var est = GetEstimation(movie);
+                    builder.Append($"{k}) {movie.Title} | estimation = {est}\n");
                     k++;
                 }
             }
