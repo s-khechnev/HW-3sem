@@ -7,8 +7,6 @@ void ReinitDb()
 {
     using (var dataContext = new DataContext())
     {
-        dataContext.Database.EnsureDeleted();
-        
         MyParser.Run(dataContext);
 
         Console.WriteLine("Saving to db...");
@@ -16,7 +14,7 @@ void ReinitDb()
         var stopwatch = new Stopwatch();
         stopwatch.Start();
 
-        
+        dataContext.Database.EnsureDeleted();   
         dataContext.Database.EnsureCreated();
 
         dataContext.Movies.AddRange(MyParser.FilmTitleMovie.Values);

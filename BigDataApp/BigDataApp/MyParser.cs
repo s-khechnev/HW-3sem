@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using BigDataApp.Entities;
 
@@ -6,7 +7,7 @@ namespace BigDataApp;
 
 public static class MyParser
 {
-    private static Dictionary<string, Dictionary<string, List<Person>>> _filmIdCategoryActors = new();
+    private static Dictionary<string, Dictionary<string, List<Person>>> _filmIdCategoryPersons = new();
     private static Dictionary<string, string>? _ratingDict = new();
     private static Dictionary<string, List<Tag>>? _filmIdTags = new();
 
@@ -22,9 +23,9 @@ public static class MyParser
 
     private static void AddPersons(string filmId, string category, Movie movie)
     {
-        if (_filmIdCategoryActors[filmId].ContainsKey(category))
+        if (_filmIdCategoryPersons[filmId].ContainsKey(category))
         {
-            foreach (var item in _filmIdCategoryActors[filmId][category])
+            foreach (var item in _filmIdCategoryPersons[filmId][category])
             {
                 if (category == "director")
                 {
@@ -53,7 +54,7 @@ public static class MyParser
             result.Rating = -1f;
         }
 
-        if (_filmIdCategoryActors.ContainsKey(filmId))
+        if (_filmIdCategoryPersons.ContainsKey(filmId))
         {
             AddPersons(filmId, "actor", result);
             AddPersons(filmId, "director", result);
@@ -67,6 +68,7 @@ public static class MyParser
         return result;
     }
 
+    [SuppressMessage("ReSharper.DPA", "DPA0000: DPA issues")]
     public static void Run(DataContext context)
     {
         Console.WriteLine("Parsing...");
@@ -192,21 +194,21 @@ public static class MyParser
 
                     person.Category = category;
 
-                    if (_filmIdCategoryActors.ContainsKey(filmId))
+                    if (_filmIdCategoryPersons.ContainsKey(filmId))
                     {
-                        if (_filmIdCategoryActors[filmId].ContainsKey(category))
+                        if (_filmIdCategoryPersons[filmId].ContainsKey(category))
                         {
-                            _filmIdCategoryActors[filmId][category].Add(person);
+                            _filmIdCategoryPersons[filmId][category].Add(person);
                         }
                         else
                         {
-                            _filmIdCategoryActors[filmId][category] = new List<Person>() { person };
+                            _filmIdCategoryPersons[filmId][category] = new List<Person>() { person };
                         }
                     }
                     else
                     {
-                        _filmIdCategoryActors[filmId] = new Dictionary<string, List<Person>>();
-                        _filmIdCategoryActors[filmId][category] = new List<Person>() { person };
+                        _filmIdCategoryPersons[filmId] = new Dictionary<string, List<Person>>();
+                        _filmIdCategoryPersons[filmId][category] = new List<Person>() { person };
                     }
                 }
             }
@@ -367,11 +369,11 @@ public static class MyParser
 
         var ansTask2 = Task.Run(() =>
         {
-            foreach (var filmId in _filmIdCategoryActors.Keys)
+            foreach (var filmId in _filmIdCategoryPersons.Keys)
             {
-                foreach (var keyPersonCategory in _filmIdCategoryActors[filmId].Keys)
+                foreach (var keyPersonCategory in _filmIdCategoryPersons[filmId].Keys)
                 {
-                    foreach (var person in _filmIdCategoryActors[filmId][keyPersonCategory])
+                    foreach (var person in _filmIdCategoryPersons[filmId][keyPersonCategory])
                     {
                         if (keyPersonCategory == "director")
                             AddToPersonDict(filmId, person, DirectorMovies);
@@ -411,7 +413,7 @@ public static class MyParser
 
         Console.WriteLine("Candidates solving");
 
-        var candidates = new Dictionary<Movie, HashSet<Movie>>();
+        /*var candidates = new Dictionary<Movie, HashSet<Movie>>();
         foreach (var movie in FilmTitleMovie.Values)
         {
             if (movie.Tags != null)
@@ -441,19 +443,19 @@ public static class MyParser
                             candidates[movie] = DirectorMovies[person];
                     }
                 }
-        }
+        }*/
 
+        var candidates = FilmTitleMovie.Values
+            .Where(m => Math.Abs(m.Rating - (-1f)) > float.Epsilon && m.Tags != null && m.Persons != null);
+        
         Console.WriteLine("Candidates are done");
 
         Console.WriteLine("Init top");
         Parallel.ForEach(FilmTitleMovie.Values, item =>
         {
-            if (!candidates.ContainsKey(item))
-                return;
-
             Dictionary<float, HashSet<Movie>> estimationMovies = new();
             Dictionary<string, string> addedMovies = new(); //id -> title
-            foreach (var movie in candidates[item])
+            foreach (var movie in candidates)
             {
                 if (movie == item)
                     continue;

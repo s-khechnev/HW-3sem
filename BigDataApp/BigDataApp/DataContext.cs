@@ -14,9 +14,6 @@ public class DataContext : DbContext
 
     public DataContext()
     {
-        base.ChangeTracker.AutoDetectChangesEnabled = false;
-        base.ChangeTracker.LazyLoadingEnabled = false;
-        base.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -30,8 +27,8 @@ public class DataContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        /*modelBuilder.Entity<Movie>()
+        modelBuilder.Entity<Movie>()
             .HasMany(m => m.Top)
-            .WithMany();*/
+            .WithMany();
     }
 }

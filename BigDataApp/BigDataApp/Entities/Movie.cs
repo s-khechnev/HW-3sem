@@ -10,7 +10,6 @@ namespace BigDataApp.Entities
         public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
         public List<Movie>? Top { get; set; }
-        public List<Movie> Movies { get; set; }
 
         public float GetEstimation(Movie other)
         {
