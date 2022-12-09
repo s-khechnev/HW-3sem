@@ -1,15 +1,20 @@
-﻿using System.Text;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text;
 
 namespace BigDataApp.Entities
 {
-    public sealed class Movie
+    //title -> filmId
+    //[Table("movies")]
+    public class Movie
     {
         public int Id { get; set; }
-        public string Title { get; set; }
         public HashSet<Person>? Persons { get; set; }
         public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
         public List<Movie>? Top { get; set; }
+        public List<Title> Titles { get; set; }
+
+        public string OriginalTitle { get; set; }
 
         public float GetEstimation(Movie other)
         {
@@ -44,7 +49,7 @@ namespace BigDataApp.Entities
 
         public override string ToString()
         {
-            var builder = new StringBuilder($"Title: {Title}\n");
+            var builder = new StringBuilder($"Original Title: {OriginalTitle}\n");
 
             if (Persons != null && Persons.Count != 0)
             {
@@ -64,7 +69,7 @@ namespace BigDataApp.Entities
                 builder.Append("Tags: no information available\n");
             }
 
-            builder.Append($"Rating:");
+            builder.Append("Rating: ");
             if (Rating != -1)
             {
                 builder.Append(Rating);
@@ -83,7 +88,7 @@ namespace BigDataApp.Entities
                 foreach (var movie in Top)
                 {
                     var est = GetEstimation(movie);
-                    builder.Append($"{k}) {movie.Title} | estimation = {est}\n");
+                    builder.Append($"{k}) {movie.OriginalTitle} | estimation = {est}\n");
                     k++;
                 }
             }

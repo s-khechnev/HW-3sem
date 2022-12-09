@@ -1,4 +1,5 @@
-﻿using BigDataApp.Entities;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using BigDataApp.Entities;
 
 namespace BigDataApp;
 
