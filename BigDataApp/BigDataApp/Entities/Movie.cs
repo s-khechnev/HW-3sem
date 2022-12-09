@@ -21,7 +21,7 @@ namespace BigDataApp.Entities
             float personsEstimation;
             float tagsEstimation;
 
-            if (other.Persons != null && Persons != null)
+            if (other.Persons != null && Persons != null && other.Persons.Count != 0 && Persons.Count != 0)
             {
                 var intersectionPersonCount = Persons.Intersect(other.Persons).Count();
                 personsEstimation = (float)intersectionPersonCount / (4 * Persons.Count);
@@ -31,7 +31,7 @@ namespace BigDataApp.Entities
                 personsEstimation = 0f;
             }
 
-            if (other.Tags != null && Tags != null)
+            if (other.Tags != null && Tags != null && other.Tags.Count != 0 && Tags.Count != 0)
             {
                 var intersectionTagsCount = Tags.Intersect(other.Tags).Count();
                 tagsEstimation = (float)intersectionTagsCount / (4 * Tags.Count);
@@ -61,8 +61,10 @@ namespace BigDataApp.Entities
 
             if (Tags != null && Tags.Count != 0)
             {
-                builder.Append("Tags:\n");
-                Tags.ToList().ForEach(x => builder.Append(string.Concat(x, "\n")));
+                /*builder.Append("Tags:\n");
+                Tags.ToList().ForEach(x => builder.Append(string.Concat(x, "\n")));*/
+
+                builder.Append("Tags count: " + Tags.Count);
             }
             else
             {

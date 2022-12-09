@@ -207,15 +207,15 @@ public static class Program
 
                         var movieEntity = context.Movies
                             .Where(movie => movieId == movie.Id)
-                            .Include(x => x.Persons)
-                            .Include(x => x.Tags)
-                            .AsSplitQuery()
                             .Include(x => x.Titles)
                             .Include(x => x.Top)
                             .ThenInclude(x => x.Persons)
                             .AsSplitQuery()
                             .Include(x => x.Top)
                             .ThenInclude(x => x.Tags)
+                            .AsSplitQuery()
+                            .Include(x => x.Persons)
+                            .Include(x => x.Tags)
                             .Single();
                         
                         Console.WriteLine(title.Name);
@@ -225,18 +225,30 @@ public static class Program
                     case "person":
 
                         line = Console.ReadLine();
-                        movies = context.Movies
+                        /*movies = context.Movies
                             .Include(x => x.Persons)
                             .Include(x => x.Tags)
                             .AsSplitQuery()
-                            .Include(x => x.Top)!
+                            .Include(x => x.Titles)
+                            .Include(x => x.Top)
                             .ThenInclude(x => x.Persons)
                             .AsSplitQuery()
-                            .Include(x => x.Top)!
+                            .Include(x => x.Top)
                             .ThenInclude(x => x.Tags)
-                            .Where(x => x.Persons.Any(p => p.Name.ToLower() == line.ToLower()));
+                            .Where(x => x.Persons.Any(p => p.Name.ToLower() == line.ToLower()));*/
 
-                        movies.ToList().ForEach(Console.WriteLine);
+                        var person = context.Persons
+                            .Where(pers => pers.Name.ToLower() == line.ToLower())
+                            .Include(x => x.Movies)
+                            .ThenInclude(x => x.Top)
+                            .Include(x => x.Movies)
+                            .ThenInclude(x => x.Persons)
+                            .Include(x => x.Movies)
+                            .ThenInclude(x => x.Tags)
+                            .AsSplitQuery()
+                            .Single();
+                            
+                        person.Movies?.ToList().ForEach(Console.WriteLine);
 
                         break;
                     case "tag":
