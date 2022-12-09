@@ -40,10 +40,7 @@ namespace BigDataApp.Entities
             {
                 tagsEstimation = 0f;
             }
-
-            if (personsEstimation == 0f && tagsEstimation == 0f)
-                return -1f;
-
+            
             return personsEstimation + tagsEstimation + other.Rating / 20;
         }
 
@@ -64,7 +61,7 @@ namespace BigDataApp.Entities
                 /*builder.Append("Tags:\n");
                 Tags.ToList().ForEach(x => builder.Append(string.Concat(x, "\n")));*/
 
-                builder.Append("Tags count: " + Tags.Count);
+                builder.Append("Tags count: " + Tags.Count + '\n');
             }
             else
             {
@@ -86,11 +83,9 @@ namespace BigDataApp.Entities
             {
                 builder.Append("Top10:\n");
                 var k = 1;
-                Top.Sort((a, b) => GetEstimation(b).CompareTo(GetEstimation(a)));
                 foreach (var movie in Top)
                 {
-                    var est = GetEstimation(movie);
-                    builder.Append($"{k}) {movie.OriginalTitle} | estimation = {est}\n");
+                    builder.Append($"{k}) {movie.OriginalTitle}\n");
                     k++;
                 }
             }

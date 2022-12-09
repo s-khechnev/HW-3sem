@@ -21,7 +21,7 @@ public static class MyParser
     private static Dictionary<string, HashSet<string>> _directorIdFilmsIds = new();
     private static Dictionary<string, HashSet<string>> _actorIdFilmsIds = new();
     private static Dictionary<string, HashSet<string>> _tagFilmsIds = new();
-    
+
     public static Dictionary<string, Movie> _filmIdMovie = new();
     public static Dictionary<string, Tag> _tagNameTag = new();
     public static Dictionary<string, Person> _personIdPerson = new();
@@ -70,10 +70,10 @@ public static class MyParser
 
                     index = lineSpan.IndexOf('\t');
                     var lang = lineSpan.Slice(0, index).ToString();
-                    
+
                     index = lineSpan.IndexOf('\t');
                     lineSpan = lineSpan.Slice(index + 1);
-                    
+
                     index = lineSpan.IndexOf('\t');
                     lineSpan = lineSpan.Slice(index + 1);
 
@@ -85,7 +85,7 @@ public static class MyParser
 
                     var isOriginalTitleString = lineSpan.ToString();
 
-                    var isOriginalTitle = isOriginalTitleString == "1"; 
+                    var isOriginalTitle = isOriginalTitleString == "1";
 
                     if (lang == "en" || lang == "ru" || region == "US" || region == "RU")
                     {
@@ -96,7 +96,7 @@ public static class MyParser
                             movieId++;
                             movie.Titles = new List<Title>();
                             movie.OriginalTitle = filmTitle;
-                            
+
                             _filmIdMovie.Add(filmId, movie);
                             /*lock (context)
                             {
@@ -113,11 +113,11 @@ public static class MyParser
                             _filmIdFilmTitles[filmId] = new List<string> { filmTitle };
                         }
 
-                        var title = new Title() { Id = titleId , Name = filmTitle, MovieId = _filmIdMovie[filmId].Id};
+                        var title = new Title() { Id = titleId, Name = filmTitle, MovieId = _filmIdMovie[filmId].Id };
                         titleId++;
                         Titles.Add(title);
                         _filmIdMovie[filmId].Titles.Add(title);
-                        
+
                         if (!_filmTitleFilmId.ContainsKey(filmTitle))
                         {
                             _filmTitleFilmId.Add(filmTitle, filmId);
@@ -136,9 +136,9 @@ public static class MyParser
         {
             const string pathActorsDirectorsNames =
                 @"C:\Users\s-khechnev\Desktop\ml-latest\ActorsDirectorsNames_IMDB.txt";
-            
+
             var id = 1;
-            
+
             using (var fs = new FileStream(pathActorsDirectorsNames, FileMode.Open, FileAccess.Read, FileShare.None,
                        64 * 1024, FileOptions.SequentialScan))
             using (var reader = new StreamReader(fs))
@@ -303,7 +303,7 @@ public static class MyParser
             var pathTagCodes = @"C:\Users\s-khechnev\Desktop\ml-latest\TagCodes_MovieLens.csv";
 
             var id = 1;
-            
+
             var codeTagTagName = new Dictionary<string, string>();
             using (var fs = new FileStream(pathTagCodes, FileMode.Open, FileAccess.Read, FileShare.None, 64 * 1024,
                        FileOptions.SequentialScan))
@@ -323,7 +323,7 @@ public static class MyParser
                     var tagName = lineSpan.ToString();
 
                     codeTagTagName[codeTag] = tagName;
-                    _tagNameTag[tagName] = new Tag() { Name = tagName , Id = id};
+                    _tagNameTag[tagName] = new Tag() { Name = tagName, Id = id };
                     id++;
                 }
             }
@@ -484,6 +484,7 @@ public static class MyParser
                                 continue;
 
                             var estimation = GetEstimation(filmId, movieId);
+                            
 
                             if (estimationFilmsIds.ContainsKey(estimation))
                                 estimationFilmsIds[estimation].Add(movieId);
@@ -537,24 +538,6 @@ public static class MyParser
                     }
                 }
             }
-
-            /*foreach (var candidateId in candidatesSet)
-            {
-                if (candidateId == filmId)
-                    continue;
-
-                if (addedFilmsIds.Contains(candidateId))
-                    continue;
-
-                var estimation = GetEstimation(filmId, candidateId);
-
-                if (estimationFilmsIds.ContainsKey(estimation))
-                    estimationFilmsIds[estimation].Add(candidateId);
-                else
-                    estimationFilmsIds.Add(estimation, new HashSet<string>() { candidateId });
-
-                addedFilmsIds.Add(candidateId);
-            }*/
 
             int k = 0;
 
@@ -652,7 +635,7 @@ public static class MyParser
                     movie.Top.Add(_filmIdMovie[topFilmId]);
                 }
             }
-            
+
             //context.Update(movie);
         }
 
@@ -767,7 +750,7 @@ public static class MyParser
         if (personsEstimation == 0f && tagsEstimation == 0f)
             return -1f;
 
-        if (!_filmIdRating.TryGetValue(otherFilmId, out rating))
+       if (!_filmIdRating.TryGetValue(otherFilmId, out rating))
             rating = 0;
 
         return personsEstimation + tagsEstimation + rating / 20;
