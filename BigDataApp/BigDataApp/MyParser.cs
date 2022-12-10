@@ -27,7 +27,7 @@ public static class MyParser
     public static Dictionary<string, Person> _personIdPerson = new();
     public static List<Title> Titles = new();
 
-    private static int personId = 1;
+    private static int personID = 1;
 
     [SuppressMessage("ReSharper.DPA", "DPA0000: DPA issues")]
     public static void Run()
@@ -157,8 +157,8 @@ public static class MyParser
                     var personName = lineSpan.Slice(0, index).ToString();
 
                     var person = new Person() { Name = personName };
-                    person.Id = MyParser.personId;
-                    MyParser.personId++;
+                    person.Id = MyParser.personID;
+                    MyParser.personID++;
                     _personIdPerson[personId] = person;
                     /*lock (context)
                     {
@@ -452,12 +452,9 @@ public static class MyParser
 
         Console.WriteLine("init top10");
 
-        ConcurrentDictionary<string, List<string>> filmIdTopsIds = new();
+        Dictionary<string, List<string>> filmIdTopsIds = new();
 
-        var options = new ParallelOptions();
-        options.MaxDegreeOfParallelism = -1;
-
-        Parallel.ForEach(_filmIdFilmTitles.Keys, options, filmId =>
+        Parallel.ForEach(_filmIdFilmTitles.Keys, new ParallelOptions() { MaxDegreeOfParallelism = -1 }, filmId =>
         {
             //var candidatesSet = new HashSet<string>();
 
@@ -484,7 +481,6 @@ public static class MyParser
                                 continue;
 
                             var estimation = GetEstimation(filmId, movieId);
-                            
 
                             if (estimationFilmsIds.ContainsKey(estimation))
                                 estimationFilmsIds[estimation].Add(movieId);
@@ -541,17 +537,23 @@ public static class MyParser
 
             int k = 0;
 
-            if (estimationFilmsIds.Count == 0)
+            if (estimationFilmsIds.Keys.Count == 0)
                 return;
 
-            filmIdTopsIds.TryAdd(filmId, new List<string>());
-
+            lock (filmIdTopsIds)
+            {
+                filmIdTopsIds.Add(filmId, new List<string>());    
+            }
+            
             var orderedDict = estimationFilmsIds.OrderByDescending(x => x.Key);
             foreach (var estMovie in orderedDict)
             {
                 foreach (var film in estMovie.Value)
                 {
-                    filmIdTopsIds[filmId].Add(film);
+                    lock (filmIdTopsIds)
+                    {
+                        filmIdTopsIds[filmId].Add(film);    
+                    }
                     k++;
                     if (k == 10)
                         break;
@@ -584,7 +586,8 @@ public static class MyParser
 
         //init movie
 
-        foreach (var filmId in _filmIdFilmTitles.Keys)
+        stopwatch.Restart();
+        Parallel.ForEach(_filmIdFilmTitles.Keys, new ParallelOptions() { MaxDegreeOfParallelism = -1 }, filmId =>
         {
             var movie = _filmIdMovie[filmId];
             //movie.Title = filmTitle;
@@ -597,19 +600,23 @@ public static class MyParser
                     foreach (var personId in _filmIdCategoryPersonsIds[filmId][categoryPersonsId.Key])
                     {
                         Person? person;
-                        if (!_personIdPerson.ContainsKey(personId))
+                        lock (movie)
                         {
-                            person = new Person() { Name = personId };
-                            person.Id = MyParser.personId;
-                            MyParser.personId++;
-                            _personIdPerson.Add(personId, person);
-                            //context.Add(person);
+                            if (!_personIdPerson.ContainsKey(personId))
+                            {
+                                person = new Person() { Name = personId };
+                                person.Id = MyParser.personID;
+                                MyParser.personID++;
+                                _personIdPerson.Add(personId, person);
+                            }
                         }
 
-                        person = _personIdPerson[personId];
-                        person.Category = categoryPersonsId.Key;
-                        movie.Persons.Add(_personIdPerson[personId]);
-
+                        lock (movie)
+                        {
+                            person = _personIdPerson[personId];
+                            person.Category = categoryPersonsId.Key;
+                            movie.Persons.Add(_personIdPerson[personId]);
+                        }
                         //context.Update(person);
                     }
                 }
@@ -635,72 +642,105 @@ public static class MyParser
                     movie.Top.Add(_filmIdMovie[topFilmId]);
                 }
             }
-
-            //context.Update(movie);
-        }
+        });
 
         //init persons
-        foreach (var filmId in _filmIdCategoryPersonsIds.Keys)
-        {
-            foreach (var keyPersonCategory in _filmIdCategoryPersonsIds[filmId].Keys)
+        Parallel.ForEach(_filmIdCategoryPersonsIds.Keys, new ParallelOptions() { MaxDegreeOfParallelism = -1 },
+            filmId =>
             {
-                foreach (var personId in _filmIdCategoryPersonsIds[filmId][keyPersonCategory])
+                foreach (var keyPersonCategory in _filmIdCategoryPersonsIds[filmId].Keys)
                 {
-                    Person? person;
-                    if (!_personIdPerson.ContainsKey(personId))
+                    foreach (var personId in _filmIdCategoryPersonsIds[filmId][keyPersonCategory])
                     {
-                        person = new Person() { Name = personId };
-                        person.Id = MyParser.personId;
-                        MyParser.personId++;
-                        _personIdPerson.Add(personId, person);
-                    }
+                        Person? person;
+                        lock (filmId)
+                        {
+                            if (!_personIdPerson.ContainsKey(personId))
+                            {
+                                person = new Person() { Name = personId };
+                                person.Id = MyParser.personID;
+                                MyParser.personID++;
+                                _personIdPerson.Add(personId, person);
+                            }
+                        }
 
-                    person = _personIdPerson[personId];
+                        lock (filmId)
+                        {
+                            person = _personIdPerson[personId];
+                        }
 
-                    if (keyPersonCategory == "director")
-                    {
-                        person.Category = "director";
-                        if (person.Movies != null)
+                        if (keyPersonCategory == "director")
                         {
-                            foreach (var t_filmId in _directorIdFilmsIds[personId])
+                            lock (person)
                             {
-                                person.Movies.Add(_filmIdMovie[t_filmId]);
+                                person.Category = "director";
+                            }
+
+                            if (person.Movies != null)
+                            {
+                                foreach (var tFilmId in _directorIdFilmsIds[personId])
+                                {
+                                    lock (person)
+                                    {
+                                        person.Movies.Add(_filmIdMovie[tFilmId]);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                lock (person)
+                                {
+                                    person.Movies = new HashSet<Movie>();
+                                }
+
+                                foreach (var tFilmId in _directorIdFilmsIds[personId])
+                                {
+                                    lock (person)
+                                    {
+                                        person.Movies.Add(_filmIdMovie[tFilmId]);
+                                    }
+                                }
                             }
                         }
-                        else
+                        else if (keyPersonCategory == "actor")
                         {
-                            person.Movies = new HashSet<Movie>();
-                            foreach (var t_filmId in _directorIdFilmsIds[personId])
+                            lock (person)
                             {
-                                person.Movies.Add(_filmIdMovie[t_filmId]);
+                                person.Category = "actor";
                             }
-                        }
-                    }
-                    else if (keyPersonCategory == "actor")
-                    {
-                        person.Category = "actor";
-                        if (person.Movies != null)
-                        {
-                            foreach (var t_filmId in _actorIdFilmsIds[personId])
+
+                            if (person.Movies != null)
                             {
-                                person.Movies.Add(_filmIdMovie[t_filmId]);
+                                foreach (var tFilmId in _actorIdFilmsIds[personId])
+                                {
+                                    lock (person)
+                                    {
+                                        person.Movies.Add(_filmIdMovie[tFilmId]);
+                                    }
+                                }
                             }
-                        }
-                        else
-                        {
-                            person.Movies = new HashSet<Movie>();
-                            foreach (var t_filmId in _actorIdFilmsIds[personId])
+                            else
                             {
-                                person.Movies.Add(_filmIdMovie[t_filmId]);
+                                lock (person)
+                                {
+                                    person.Movies = new HashSet<Movie>();
+                                }
+
+                                foreach (var tFilmId in _actorIdFilmsIds[personId])
+                                {
+                                    lock (person)
+                                    {
+                                        person.Movies.Add(_filmIdMovie[tFilmId]);
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
-        }
+            });
 
         //init tags
-        foreach (var filmId in _filmIdTagsNames.Keys)
+        Parallel.ForEach(_filmIdTagsNames.Keys, filmId =>
         {
             var movie = _filmIdMovie[filmId];
 
@@ -710,11 +750,14 @@ public static class MyParser
             {
                 movie.Tags.Add(_tagNameTag[tagName]);
             }
+        });
 
-            //context.Update(movie);
-        }
+        ts = stopwatch.Elapsed;
+        elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+            ts.Hours, ts.Minutes, ts.Seconds,
+            ts.Milliseconds / 10);
 
-        Console.WriteLine("End creating etities");
+        Console.WriteLine("End creating etities - " + elapsedTime);
         Console.WriteLine("End parsing");
     }
 
@@ -750,7 +793,7 @@ public static class MyParser
         if (personsEstimation == 0f && tagsEstimation == 0f)
             return -1f;
 
-       if (!_filmIdRating.TryGetValue(otherFilmId, out rating))
+        if (!_filmIdRating.TryGetValue(otherFilmId, out rating))
             rating = 0;
 
         return personsEstimation + tagsEstimation + rating / 20;

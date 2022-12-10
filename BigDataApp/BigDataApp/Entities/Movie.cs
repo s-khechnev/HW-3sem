@@ -8,11 +8,11 @@ namespace BigDataApp.Entities
     public class Movie
     {
         public int Id { get; set; }
-        public HashSet<Person>? Persons { get; set; }
-        public HashSet<Tag>? Tags { get; set; }
+        public virtual HashSet<Person>? Persons { get; set; }
+        public virtual HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
-        public List<Movie>? Top { get; set; }
-        public List<Title> Titles { get; set; }
+        public virtual List<Movie>? Top { get; set; }
+        public virtual List<Title> Titles { get; set; }
 
         public string OriginalTitle { get; set; }
 
@@ -40,7 +40,7 @@ namespace BigDataApp.Entities
             {
                 tagsEstimation = 0f;
             }
-            
+
             return personsEstimation + tagsEstimation + other.Rating / 20;
         }
 
@@ -79,13 +79,14 @@ namespace BigDataApp.Entities
                 builder.Append("no information available\n");
             }
 
-            if (Top != null)
+            if (Top != null && Top.Count != 0)
             {
                 builder.Append("Top10:\n");
                 var k = 1;
-                foreach (var movie in Top)
+                var sortedTop = Top.OrderByDescending(a => GetEstimation(a));
+                foreach (var movie in sortedTop)
                 {
-                    builder.Append($"{k}) {movie.OriginalTitle}\n");
+                    builder.Append($"{k}) {movie.OriginalTitle} | estimation {GetEstimation(movie)}\n");
                     k++;
                 }
             }

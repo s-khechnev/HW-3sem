@@ -1,19 +1,19 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using BigDataApp;
 using BigDataApp.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using NpgsqlTypes;
 
+namespace BigDataApp;
 
 public static class Program
 {
-    static void ReinitDb()
+    private static void ReinitDb()
     {
         var globalStopWatch = new Stopwatch();
         globalStopWatch.Start();
-        
+
         MyParser.Run();
 
         var stopwatch = new Stopwatch();
@@ -41,13 +41,14 @@ public static class Program
         using (NpgsqlConnection connection = new NpgsqlConnection(connectionString))
         {
             connection.Open();
+
             using (var writer = connection.BeginBinaryImport("copy \"Movies\" from STDIN (FORMAT BINARY)"))
             {
                 foreach (var movie in MyParser._filmIdMovie.Values)
                 {
                     writer.StartRow();
-                    writer.Write(movie.Id, NpgsqlTypes.NpgsqlDbType.Integer);
-                    writer.Write(movie.Rating, NpgsqlTypes.NpgsqlDbType.Real);
+                    writer.Write(movie.Id, NpgsqlDbType.Integer);
+                    writer.Write(movie.Rating, NpgsqlDbType.Real);
                     writer.Write(movie.OriginalTitle, NpgsqlDbType.Text);
                 }
 
@@ -61,9 +62,9 @@ public static class Program
                     if (string.IsNullOrEmpty(person.Category))
                         continue;
                     writer.StartRow();
-                    writer.Write(person.Id, NpgsqlTypes.NpgsqlDbType.Integer);
-                    writer.Write(person.Name, NpgsqlTypes.NpgsqlDbType.Text);
-                    writer.Write(person.Category, NpgsqlTypes.NpgsqlDbType.Text);
+                    writer.Write(person.Id, NpgsqlDbType.Integer);
+                    writer.Write(person.Name, NpgsqlDbType.Text);
+                    writer.Write(person.Category, NpgsqlDbType.Text);
                 }
 
                 writer.Complete();
@@ -74,8 +75,8 @@ public static class Program
                 foreach (var tag in MyParser._tagNameTag.Values)
                 {
                     writer.StartRow();
-                    writer.Write(tag.Id, NpgsqlTypes.NpgsqlDbType.Integer);
-                    writer.Write(tag.Name, NpgsqlTypes.NpgsqlDbType.Text);
+                    writer.Write(tag.Id, NpgsqlDbType.Integer);
+                    writer.Write(tag.Name, NpgsqlDbType.Text);
                 }
 
                 writer.Complete();
@@ -86,9 +87,9 @@ public static class Program
                 foreach (var title in MyParser.Titles)
                 {
                     writer.StartRow();
-                    writer.Write(title.Id, NpgsqlTypes.NpgsqlDbType.Integer);
-                    writer.Write(title.Name, NpgsqlTypes.NpgsqlDbType.Text);
-                    writer.Write(title.MovieId, NpgsqlTypes.NpgsqlDbType.Integer);
+                    writer.Write(title.Id, NpgsqlDbType.Integer);
+                    writer.Write(title.Name, NpgsqlDbType.Text);
+                    writer.Write(title.MovieId, NpgsqlDbType.Integer);
                 }
 
                 writer.Complete();
@@ -104,8 +105,8 @@ public static class Program
                     foreach (var topMovie in movie.Top)
                     {
                         writer.StartRow();
-                        writer.Write(movie.Id, NpgsqlTypes.NpgsqlDbType.Integer);
-                        writer.Write(topMovie.Id, NpgsqlTypes.NpgsqlDbType.Integer);
+                        writer.Write(movie.Id, NpgsqlDbType.Integer);
+                        writer.Write(topMovie.Id, NpgsqlDbType.Integer);
                     }
                 }
 
@@ -123,8 +124,8 @@ public static class Program
                     foreach (var person in persons)
                     {
                         writer.StartRow();
-                        writer.Write(movie.Id, NpgsqlTypes.NpgsqlDbType.Integer);
-                        writer.Write(person.Id, NpgsqlTypes.NpgsqlDbType.Integer);
+                        writer.Write(movie.Id, NpgsqlDbType.Integer);
+                        writer.Write(person.Id, NpgsqlDbType.Integer);
                     }
                 }
 
@@ -141,8 +142,8 @@ public static class Program
                     foreach (var tag in movie.Tags)
                     {
                         writer.StartRow();
-                        writer.Write(movie.Id, NpgsqlTypes.NpgsqlDbType.Integer);
-                        writer.Write(tag.Id, NpgsqlTypes.NpgsqlDbType.Integer);
+                        writer.Write(movie.Id, NpgsqlDbType.Integer);
+                        writer.Write(tag.Id, NpgsqlDbType.Integer);
                     }
                 }
 
@@ -159,14 +160,14 @@ public static class Program
             ts.Milliseconds / 10);
         Console.WriteLine(elapsedTime);
         Console.WriteLine("Complete saving to db...");
-        
+
         TimeSpan gTs = globalStopWatch.Elapsed;
-        string gloablElapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
+        string globalElapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}",
             gTs.Hours, gTs.Minutes, gTs.Seconds,
             gTs.Milliseconds / 10);
-        
+
         Console.WriteLine("Time execution reinit db: ");
-        Console.WriteLine(gloablElapsedTime);
+        Console.WriteLine(globalElapsedTime);
     }
 
     static void Main()
@@ -177,100 +178,113 @@ public static class Program
     [SuppressMessage("ReSharper.DPA", "DPA0000: DPA issues")]
     private static void Run()
     {
-        using (var context = new DataContext())
+        using var context = new DataContext();
+        while (true)
         {
-            while (true)
+            Console.WriteLine("film, person, tag");
+            string? line = Console.ReadLine();
+
+            if (line == null)
+                continue;
+
+            IQueryable<Movie> movies;
+
+            switch (line.ToLower())
             {
-                Console.WriteLine("film, person, tag");
-                string line = Console.ReadLine();
+                case "film":
 
-                if (line == null)
-                    continue;
+                    line = Console.ReadLine();
 
-                IQueryable<Movie> movies;
+                    if (string.IsNullOrEmpty(line))
+                        break;
 
-                switch (line.ToLower())
-                {
-                    case "film":
+                    Stopwatch stopwatch = new();
+                    stopwatch.Start();
 
-                        line = Console.ReadLine();
+                    var titles = context.Titles
+                        .Where(x => x.Name.ToLower() == line.ToLower())
+                        .Include(x => x.Movie);
 
-                        Stopwatch stopwatch = new();
-                        stopwatch.Start();
+                    if (!titles.Any())
+                    {
+                        Console.WriteLine("Not found");
+                    }
 
-                        var titles = context.Titles
-                            .Where(x => x.Name.ToLower() == line.ToLower())
-                            .Include(x => x.Movie);
+                    var title = titles.First();
+                    var movieId = title.MovieId;
 
-                        var title = titles.First();
-                        var movieId = title.MovieId;
+                    var movieEntity = context.Movies
+                        .Where(movie => movieId == movie.Id)
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Persons)
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Tags)
+                        .AsSplitQuery()
+                        .Include(x => x.Persons)
+                        .Include(x => x.Tags)
+                        .AsNoTracking();
 
-                        var movieEntity = context.Movies
-                            .Where(movie => movieId == movie.Id)
-                            .Include(x => x.Top)
-                            .ThenInclude(x => x.Persons)
-                            .AsSplitQuery()
-                            .Include(x => x.Top)
-                            .ThenInclude(x => x.Tags)
-                            .AsSplitQuery()
-                            .Include(x => x.Persons)
-                            .Include(x => x.Tags);
+                    Console.WriteLine();
+                    Console.WriteLine(title.Name);
+                    Console.WriteLine();
+                    movieEntity.ToList().ForEach(Console.WriteLine);
 
+                    break;
+                case "person":
+
+                    line = Console.ReadLine();
+
+                    if (string.IsNullOrEmpty(line))
+                        break;
+
+                    movies = context.Movies
+                        .Where(x => x.Persons.Any(p => p.Name.ToLower() == line.ToLower()))
+                        .Include(x => x.Persons)
+                        .Include(x => x.Tags)
+                        .AsSplitQuery()
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Persons)
+                        .AsSplitQuery()
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Tags);
+
+                    movies.ToList().ForEach(Console.WriteLine);
+
+                    break;
+                case "tag":
+
+                    line = Console.ReadLine();
+
+                    if (string.IsNullOrEmpty(line))
+                        break;
+
+                    movies = context.Movies
+                        .Include(x => x.Persons)
+                        .Include(x => x.Tags)
+                        .AsSplitQuery()
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Persons)
+                        .AsSplitQuery()
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Tags)
+                        .Where(x => x.Tags.Any(t => t.Name.ToLower() == line.ToLower()));
+
+                    movies.ToList().ForEach(Console.WriteLine);
+
+                    break;
+                case "reinit":
+                    Console.WriteLine("Are you sure?");
+                    var ans = Console.ReadKey();
+                    if (ans.Key == ConsoleKey.Y)
+                    {
                         Console.WriteLine();
-                        Console.WriteLine(title.Name);
-                        Console.WriteLine();
-                        movieEntity.ToList().ForEach(Console.WriteLine);
+                        ReinitDb();
+                    }
 
-                        break;
-                    case "person":
-
-                        line = Console.ReadLine();
-                        
-                        movies = context.Movies
-                            .Include(x => x.Persons)
-                            .Include(x => x.Tags)
-                            .AsSplitQuery()
-                            .Include(x => x.Top)
-                            .ThenInclude(x => x.Persons)
-                            .AsSplitQuery()
-                            .Include(x => x.Top)
-                            .ThenInclude(x => x.Tags)
-                            .Where(x => x.Persons.Any(p => p.Name.ToLower() == line.ToLower()));
-                            
-                        movies.ToList().ForEach(Console.WriteLine);
-
-                        break;
-                    case "tag":
-
-                        line = Console.ReadLine();
-                        movies = context.Movies
-                            .Include(x => x.Persons)
-                            .Include(x => x.Tags)
-                            .AsSplitQuery()
-                            .Include(x => x.Top)!
-                            .ThenInclude(x => x.Persons)
-                            .AsSplitQuery()
-                            .Include(x => x.Top)!
-                            .ThenInclude(x => x.Tags)
-                            .Where(x => x.Tags.Any(t => t.Name.ToLower() == line.ToLower()));
-
-                        movies.ToList().ForEach(Console.WriteLine);
-
-                        break;
-                    case "reinit":
-                        Console.WriteLine("Are you sure?");
-                        var ans = Console.ReadKey();
-                        if (ans.Key == ConsoleKey.Y)
-                        {
-                            Console.WriteLine();
-                            ReinitDb();
-                        }
-
-                        break;
-                }
-
-                Console.WriteLine();
+                    break;
             }
+
+            Console.WriteLine();
         }
     }
 }

@@ -1,7 +1,5 @@
 ﻿using BigDataApp.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Npgsql;
 
 namespace BigDataApp;
