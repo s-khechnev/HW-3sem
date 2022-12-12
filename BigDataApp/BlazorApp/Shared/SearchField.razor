@@ -1,0 +1,55 @@
+﻿<h3>SearchField</h3>
+
+<div>
+    <form>
+        <input type="text" @bind="_inputLine" placeholder="Название фильма">
+        <button class="btn btn-primary" @onclick="()=> this._movies = OnFindMovieClick()">Поиск</button>
+    </form>
+</div>
+
+@if (_movies != null)
+{
+    <ol>
+        @foreach (var movie in _movies)
+        {
+            <h1>@movie.OriginalTitle</h1>
+        }
+    </ol>
+}
+
+@code {
+    private string? _inputLine;
+    private List<Movie>? _movies;
+
+    private List<Movie>? OnFindMovieClick()
+    {
+        using (var context = new DataContext())
+        {
+            var titles = context.Titles
+                .Where(x => x.Name.ToLower() == _inputLine.ToLower())
+                .Include(x => x.Movie);
+
+            if (!titles.Any())
+            {
+                return null;
+            }
+
+            var title = titles.First();
+            var movieId = title.MovieId;
+
+            var movieEntity = context.Movies
+                .Where(movie => movieId == movie.Id)
+                .Include(x => x.Top)!
+                .ThenInclude(x => x.Persons)
+                .Include(x => x.Top)!
+                .ThenInclude(x => x.Tags)
+                .AsSplitQuery()
+                .Include(x => x.Persons)
+                .Include(x => x.Tags)
+                .AsNoTracking();
+
+            return movieEntity.ToList();
+        }
+    }
+
+}

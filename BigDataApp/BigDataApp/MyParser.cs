@@ -229,10 +229,6 @@ public static class MyParser
             }
         });
 
-        actorsTask.Wait();
-        var t = 1;
-
-
         var ratingTask = Task.Run(() =>
         {
             string pathRating = @"C:\Users\s-khechnev\Desktop\ml-latest\Ratings_IMDB.tsv";
@@ -585,7 +581,6 @@ public static class MyParser
         Console.WriteLine("Creating entities");
 
         //init movie
-
         stopwatch.Restart();
         Parallel.ForEach(_filmIdFilmTitles.Keys, new ParallelOptions() { MaxDegreeOfParallelism = -1 }, filmId =>
         {
