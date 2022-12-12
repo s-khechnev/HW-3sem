@@ -27,7 +27,7 @@ public static class MyParser
     public static Dictionary<string, Person> _personIdPerson = new();
     public static List<Title> Titles = new();
 
-    private static int personID = 1;
+    private static int _personId = 1;
 
     [SuppressMessage("ReSharper.DPA", "DPA0000: DPA issues")]
     public static void Run()
@@ -87,8 +87,8 @@ public static class MyParser
 
                     var isOriginalTitle = isOriginalTitleString == "1";
 
-                    if (lang == "en" || lang == "ru" || region == "US" || region == "RU")
-                    {
+                    /*if (lang == "en" || lang == "ru" || region == "US" || region == "RU" || region == "GB")
+                    {*/
                         if (!_filmIdMovie.ContainsKey(filmId))
                         {
                             var movie = new Movie();
@@ -127,7 +127,7 @@ public static class MyParser
                         {
                             _filmIdMovie[filmId].OriginalTitle = filmTitle;
                         }
-                    }
+                    //}
                 }
             }
         });
@@ -157,8 +157,11 @@ public static class MyParser
                     var personName = lineSpan.Slice(0, index).ToString();
 
                     var person = new Person() { Name = personName };
-                    person.Id = MyParser.personID;
-                    MyParser.personID++;
+                    person.Id = _personId;
+                    lock (person)
+                    {
+                        _personId++;    
+                    }
                     _personIdPerson[personId] = person;
                     /*lock (context)
                     {
@@ -600,8 +603,8 @@ public static class MyParser
                             if (!_personIdPerson.ContainsKey(personId))
                             {
                                 person = new Person() { Name = personId };
-                                person.Id = MyParser.personID;
-                                MyParser.personID++;
+                                person.Id = _personId;
+                                _personId++;
                                 _personIdPerson.Add(personId, person);
                             }
                         }
@@ -653,8 +656,8 @@ public static class MyParser
                             if (!_personIdPerson.ContainsKey(personId))
                             {
                                 person = new Person() { Name = personId };
-                                person.Id = MyParser.personID;
-                                MyParser.personID++;
+                                person.Id = MyParser._personId;
+                                MyParser._personId++;
                                 _personIdPerson.Add(personId, person);
                             }
                         }

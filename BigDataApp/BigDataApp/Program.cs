@@ -59,8 +59,6 @@ public static class Program
             {
                 foreach (var person in MyParser._personIdPerson.Values)
                 {
-                    if (string.IsNullOrEmpty(person.Category))
-                        continue;
                     writer.StartRow();
                     writer.Write(person.Id, NpgsqlDbType.Integer);
                     writer.Write(person.Name, NpgsqlDbType.Text);
@@ -202,32 +200,39 @@ public static class Program
                     stopwatch.Start();
 
                     var titles = context.Titles
+                        .Include(x => x.Movie)
                         .Where(x => x.Name.ToLower() == line.ToLower())
-                        .Include(x => x.Movie);
+                        .GroupBy(x => x.MovieId).Select(x => x.First());
 
                     if (!titles.Any())
                     {
                         Console.WriteLine("Not found");
+                        break;
                     }
 
-                    var title = titles.First();
-                    var movieId = title.MovieId;
+                    Console.WriteLine("Фильмы с title = " + line);
 
-                    var movieEntity = context.Movies
-                        .Where(movie => movieId == movie.Id)
-                        .Include(x => x.Top)!
-                        .ThenInclude(x => x.Persons)
-                        .Include(x => x.Top)!
-                        .ThenInclude(x => x.Tags)
-                        .AsSplitQuery()
-                        .Include(x => x.Persons)
-                        .Include(x => x.Tags)
-                        .AsNoTracking();
+                    foreach (var title in titles)
+                    {
+                        var movieId = title.MovieId;
 
-                    Console.WriteLine();
-                    Console.WriteLine(title.Name);
-                    Console.WriteLine();
-                    movieEntity.ToList().ForEach(Console.WriteLine);
+                        using (var ctx = new DataContext())
+                        {
+                            var movieEntity = ctx.Movies
+                                .Where(movie => movieId == movie.Id)
+                                .Include(x => x.Top)!
+                                .ThenInclude(x => x.Persons)
+                                .Include(x => x.Top)!
+                                .ThenInclude(x => x.Tags)
+                                .AsSplitQuery()
+                                .Include(x => x.Persons)
+                                .Include(x => x.Tags)
+                                .Single();
+
+                            Console.WriteLine(movieEntity);
+                            Console.WriteLine();
+                        }
+                    }
 
                     break;
                 case "person":
