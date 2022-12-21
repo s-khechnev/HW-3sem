@@ -42,31 +42,10 @@ public class DataLoader
 
     public async Task<IEnumerable<Movie>> GetMoviesByTitleAsync(string title)
     {
-        /*var titles = _context.Titles
-            .AsNoTracking()
-            .Where(x => x.Name.ToLower() == title.ToLower())
-            .Include(x => x.Movie)
-            .GroupBy(x => x.MovieId).Select(x => x.First());
-
-        if (!titles.Any())
-        {
-            //Console.WriteLine("Not found");
-            return null;
-        }
-
-        var result = new List<Movie>();
-        */
-
         return await _context.Movies
             .Where(movie => movie.Titles.Any(n => n.Name.ToLower() == title.ToLower()))
-            .Include(x => x.Top)!
-            .ThenInclude(x => x.Persons)
-            .AsSplitQuery()
-            .Include(x => x.Top)!
-            .ThenInclude(x => x.Tags)
-            .AsSplitQuery()
-            .Include(x => x.Persons)
-            .Include(x => x.Tags)
+            .Include(m => m.Persons)
+            .Include(m => m.Tags)
             .ToListAsync();
     }
 
