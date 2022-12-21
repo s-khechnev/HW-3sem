@@ -9,9 +9,22 @@ public class DatabaseContext : DbContext
     public DbSet<Movie> Movies { get; set; }
     public DbSet<Tag?> Tags { get; set; }
     public DbSet<Title> Titles { get; set; }
-
-    public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
+    
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
+        var connection = new NpgsqlConnection(new NpgsqlConnectionStringBuilder()
+        {
+            Host = "localhost",
+            Port = 5432,
+            Database = "bigDataAppDB",
+            Username = "test",
+            Password = "12345",
+            Timeout = 1024
+        }.ToString());
+
+        optionsBuilder.UseNpgsql(connection);
+
+        base.OnConfiguring(optionsBuilder);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

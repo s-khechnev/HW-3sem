@@ -11,34 +11,65 @@
     </span>
 </div>
 <hr/>
-@if (_isDisplayBestMovies && _movies != null)
+@if (_isDisplayBestMovies && _bestMovies != null)
 {
     <h4>Фильмы с высочайшим рейтингом!</h4>
-    <MovieList Movies="_movies"></MovieList>
+    <MovieList Movies="_bestMovies"></MovieList>
     <hr/>
 }
-else if (!_isDisplayBestMovies && _movies != null)
+@if (!_isDisplayBestMovies)
 {
-    <h4>Найденные фильмы</h4>
-    <MovieList Movies="_movies"></MovieList>
-    <hr/>
+    @if (_movies != null)
+    {
+        <h4>Найденные фильмы</h4>
+        <MovieList Movies="_movies"></MovieList>
+        <hr/>
+    }
+    @if (_tags != null)
+    {
+        <div class="d-grid">
+            <h4>Найденные Тэги</h4>
+            @foreach (var item in _tags)
+            {
+                <a class="m-1" href="/tag/@item.Id">@item.Name</a>
+            }
+        </div>
+        <hr/>
+    }
+    @if (_persons != null)
+    {
+        <div class="d-grid">
+            <h4>Найденные Персоны</h4>
+            @foreach (var item in _persons)
+            {
+                <a class="m-1" href="/person/@item.Id">@item.Name</a>
+            }
+        </div>
+        <hr/>
+    }
 }
 
 @code
 {
     private string? _inputLine;
-    private IEnumerable<Movie>? _movies;
     private bool _isDisplayBestMovies;
+
+    private IEnumerable<Tag>? _tags;
+    private IEnumerable<Person>? _persons;
+    private IEnumerable<Movie>? _movies;
+    private IEnumerable<Movie>? _bestMovies;
 
     private async Task OnSearchClick()
     {
         _isDisplayBestMovies = false;
         _movies = await DataLoader.GetMoviesByTitleAsync(_inputLine);
+        _tags = await DataLoader.GetTagsByName(_inputLine);
+        _persons = await DataLoader.GetPersonsByName(_inputLine);
     }
 
     protected override async Task OnInitializedAsync()
     {
         _isDisplayBestMovies = true;
-        _movies = await DataLoader.GetBestMoviesAsync(20);
+        _bestMovies = await DataLoader.GetBestMoviesAsync(20);
     }
 }

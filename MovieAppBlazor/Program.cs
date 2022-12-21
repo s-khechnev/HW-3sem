@@ -17,8 +17,7 @@ var connection = new NpgsqlConnection(new NpgsqlConnectionStringBuilder()
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-builder.Services.AddDbContext<DatabaseContext>(options => options.UseNpgsql(connection), ServiceLifetime.Transient);
-builder.Services.AddScoped<DataLoader>();
+builder.Services.AddSingleton<DataLoader>();
 
 var app = builder.Build();
 

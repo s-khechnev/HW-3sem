@@ -1,19 +1,35 @@
 ﻿@page "/person/{personId:int}/"
 @inject DataLoader DataLoader
 
-<h3>@Person.Name</h3>
+@if (_person != null)
+{
+    <div class="d-inline-flex">
+        @if (!string.IsNullOrEmpty(_personImage))
+        {
+            <img src="@_personImage" width="400px" height="400px"/>
+        }
+        <div class="row mx-3">
+            <h3>@_person.Name</h3>
+            <p>Фильмы</p>
+            <MovieList Movies="_movies.OrderByDescending(m => m.Rating)"></MovieList>
+        </div>
+    </div>
+}
 
 @code {
 
     [Parameter]
-    public Person? Person { get; set; }
-
-    [Parameter]
     public int PersonId { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    private Person? _person;
+    private string _personImage;
+    private IEnumerable<Movie>? _movies;
+    
+    protected override async Task OnParametersSetAsync()
     {
-        Person = await DataLoader.GetPersonByIdAsync(PersonId);
+        _person = await DataLoader.GetPersonByIdAsync(PersonId);
+        _personImage = await DataLoader.GetPersonImageByNameAsync(_person.Name);
+        _movies = await DataLoader.GetMoviesByPersonNameAsync(_person.Name);
     }
 
 }

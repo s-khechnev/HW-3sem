@@ -5,10 +5,9 @@
     <div class="p-2 align-content-center">
         <h3>@Index</h3>
     </div>
-    @if (!string.IsNullOrEmpty(_imagePath))
+    @if (!string.IsNullOrEmpty(_imdbMovie?.Poster))
     {
-        <img class="image" src="@_imagePath" alt="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQV7xiqmh6DjGsqevAtmkqkRqvxU-X864gYB0bjocuj&s"
-             href="/movie/@Movie.Id"/>
+        <img class="image" src="@_imdbMovie.Poster" href="/movie/@Movie.Id"/>
     }
     <div class="m-lg-2 row">
         <a href="/movie/@Movie.Id" class="text-decoration-none">
@@ -25,7 +24,7 @@
             <p>Persons: </p>
             @foreach (var item in Movie.Persons.Take(5))
             {
-                <a href="person/@item.Id" class="mx-1 text-decoration-none" >@item.Name</a>
+                <a href="person/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
             }
         </div>
     </div>
@@ -41,12 +40,12 @@
 
     [Parameter]
     public int Index { get; set; }
+    
+    private ImdbMovie? _imdbMovie;
 
-    private string? _imagePath;
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
-        _imagePath = await DataLoader.GetImageByIdImdbAsync(Movie.IdImdb);
+        _imdbMovie = await DataLoader.GetImdbMovieByIdImdbAsync(Movie.IdImdb);
     }
 
 }

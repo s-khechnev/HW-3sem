@@ -1,19 +1,66 @@
 ﻿@page "/movie/{movieId:int}/"
 @inject DataLoader DataLoader
 
-<h3>@Movie.OriginalTitle</h3>
+@if (_movie != null)
+{
+    <div class="d-inline-flex">
+        @if (_imdbMovie != null)
+        {
+            <img src="@_imdbMovie.Poster" width="400px"/>
+        }
+        <div class="row mx-3">
+            <h3>@_movie.OriginalTitle</h3>
+            <div class="d-inline-flex">
+                <p>Tags: </p>
+                @if (_movie.Tags != null)
+                {
+                    foreach (var item in _movie.Tags.Take(5))
+                    {
+                        <a href="tag/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
+                    }
+                }
+            </div>
+            <div class="d-inline-flex">
+                <p>Persons: </p>
+                @if (_movie.Persons != null)
+                {
+                    foreach (var item in _movie.Persons.Take(5))
+                    {
+                        <a href="person/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
+                    }
+                }
+            </div>
+            @if (_imdbMovie != null)
+            {
+                <p>
+                    Сюжет: @_imdbMovie.Plot
+                </p>
+                <p>
+                    Рейтинг: @_imdbMovie.imdbRating
+                </p>
+            }
+            
+            <MovieList Movies="_movie.Top.OrderBy(m => m.Rating)"></MovieList>
+            
+        </div>
+    </div>
+}
 
 @code {
 
     [Parameter]
-    public Movie? Movie { get; set; }
-
-    [Parameter]
     public int MovieId { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    private Movie? _movie;
+    private ImdbMovie? _imdbMovie;
+
+    protected override async Task OnParametersSetAsync()
     {
-        Movie = await DataLoader.GetMovieByIdAsync(MovieId);
+        _movie = await DataLoader.GetMovieByIdAsync(MovieId);
+
+        if (_movie != null)
+            _imdbMovie = await DataLoader.GetImdbMovieByIdImdbAsync(_movie.IdImdb);
+        
     }
 
 }
