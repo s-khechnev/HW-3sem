@@ -1,0 +1,19 @@
+﻿@page "/movie/{movieId:int}/"
+@inject DataLoader DataLoader
+
+<h3>@Movie.OriginalTitle</h3>
+
+@code {
+
+    [Parameter]
+    public Movie? Movie { get; set; }
+
+    [Parameter]
+    public int MovieId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Movie = await DataLoader.GetMovieByIdAsync(MovieId);
+    }
+
+}

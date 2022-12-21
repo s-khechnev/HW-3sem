@@ -1,0 +1,52 @@
+﻿@inject DataLoader DataLoader
+
+<hr/>
+<div class="d-inline-flex">
+    <div class="p-2 align-content-center">
+        <h3>@Index</h3>
+    </div>
+    @if (!string.IsNullOrEmpty(_imagePath))
+    {
+        <img class="image" src="@_imagePath" alt="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQV7xiqmh6DjGsqevAtmkqkRqvxU-X864gYB0bjocuj&s"
+             href="/movie/@Movie.Id"/>
+    }
+    <div class="m-lg-2 row">
+        <a href="/movie/@Movie.Id" class="text-decoration-none">
+            <h2>@Movie.OriginalTitle</h2>
+        </a>
+        <div class="d-inline-flex">
+            <p>Tags: </p>
+            @foreach (var item in Movie.Tags.Take(5))
+            {
+                <a href="tag/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
+            }
+        </div>
+        <div class="d-inline-flex">
+            <p>Persons: </p>
+            @foreach (var item in Movie.Persons.Take(5))
+            {
+                <a href="person/@item.Id" class="mx-1 text-decoration-none" >@item.Name</a>
+            }
+        </div>
+    </div>
+    <div class="float-end">
+        <h4>@Movie.Rating</h4>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public Movie Movie { get; set; }
+
+    [Parameter]
+    public int Index { get; set; }
+
+    private string? _imagePath;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _imagePath = await DataLoader.GetImageByIdImdbAsync(Movie.IdImdb);
+    }
+
+}

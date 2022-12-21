@@ -1,0 +1,19 @@
+﻿@page "/person/{personId:int}/"
+@inject DataLoader DataLoader
+
+<h3>@Person.Name</h3>
+
+@code {
+
+    [Parameter]
+    public Person? Person { get; set; }
+
+    [Parameter]
+    public int PersonId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Person = await DataLoader.GetPersonByIdAsync(PersonId);
+    }
+
+}

@@ -1,9 +1,44 @@
 ﻿@page "/"
+@inject DataLoader DataLoader
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Главная</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="input-group">
+    <input class="form-control" type="text" placeholder="Фильмы, Тэги, Персоны"
+           @bind="@_inputLine" style="text-align: center">
+    <span class="input-group-btn">
+        <button class="btn btn-primary" @onclick="OnSearchClick" style="margin-left: 10px">Поиск</button>
+    </span>
+</div>
+<hr/>
+@if (_isDisplayBestMovies && _movies != null)
+{
+    <h4>Фильмы с высочайшим рейтингом!</h4>
+    <MovieList Movies="_movies"></MovieList>
+    <hr/>
+}
+else if (!_isDisplayBestMovies && _movies != null)
+{
+    <h4>Найденные фильмы</h4>
+    <MovieList Movies="_movies"></MovieList>
+    <hr/>
+}
 
-Welcome to your new app.
+@code
+{
+    private string? _inputLine;
+    private IEnumerable<Movie>? _movies;
+    private bool _isDisplayBestMovies;
 
-<SurveyPrompt Title="How is Blazor working for you?"/>
+    private async Task OnSearchClick()
+    {
+        _isDisplayBestMovies = false;
+        _movies = await DataLoader.GetMoviesByTitleAsync(_inputLine);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isDisplayBestMovies = true;
+        _movies = await DataLoader.GetBestMoviesAsync(20);
+    }
+}

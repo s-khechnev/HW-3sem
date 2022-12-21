@@ -1,0 +1,21 @@
+﻿<div class="d-grid">
+    @foreach (var movie in Movies!)
+    {
+        <MovieItem Movie="movie" Index="_index"></MovieItem>
+        _index++;
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public IEnumerable<Movie> Movies { get; set; }
+    
+    private int _index;
+
+    protected override void OnParametersSet()
+    {
+        _index = 1;
+    }
+
+}

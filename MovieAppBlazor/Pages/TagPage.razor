@@ -1,0 +1,19 @@
+﻿@page "/tag/{tagId:int}/"
+@inject DataLoader DataLoader
+
+<h3>@Tag.Name</h3>
+
+@code {
+
+    [Parameter]
+    public Tag? Tag { get; set; }
+
+    [Parameter]
+    public int TagId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Tag = await DataLoader.GetTagByIdAsync(TagId);
+    }
+
+}
