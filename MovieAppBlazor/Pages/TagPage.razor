@@ -5,21 +5,27 @@
 {
     <div class="row mx-3">
         <h3>@_tag.Name</h3>
-        <MovieList Movies="_movies.OrderByDescending(m => m.Rating)"></MovieList>
+        @if (_movies != null)
+        {
+            <MovieList Movies="@_movies.OrderByDescending(m => m.Rating)"></MovieList>
+        }
     </div>
 }
 
 @code {
+
     [Parameter]
     public int TagId { get; set; }
-    
+
     private Tag? _tag;
+
     private IEnumerable<Movie>? _movies;
 
     protected override async Task OnParametersSetAsync()
     {
         _tag = await DataLoader.GetTagByIdAsync(TagId);
-        _movies = await DataLoader.GetMoviesByTagNameAsync(_tag.Name);
+        if (_tag != null)
+            _movies = await DataLoader.GetMoviesByTagNameAsync(_tag.Name);
     }
 
 }

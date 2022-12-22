@@ -6,7 +6,8 @@
     <div class="d-inline-flex">
         @if (_imdbMovie != null)
         {
-            <img src="@_imdbMovie.Poster" width="400px"/>
+            <img src="@_imdbMovie.Poster" width="400px" height="400px"
+                 alt="https://cspromogame.ru//storage/upload_images/avatars/4137.jpg"/>
         }
         <div class="row mx-3">
             <h3>@_movie.OriginalTitle</h3>
@@ -36,12 +37,13 @@
                     Сюжет: @_imdbMovie.Plot
                 </p>
                 <p>
-                    Рейтинг: @_imdbMovie.imdbRating
+                    Рейтинг: @_imdbMovie.ImdbRating
                 </p>
             }
-            
-            <MovieList Movies="_movie.Top.OrderBy(m => m.Rating)"></MovieList>
-            
+            @if (_movie.Top != null)
+            {
+                <MovieList Movies="@(_movie.Top.OrderBy(m => m.Rating))"></MovieList>
+            }
         </div>
     </div>
 }
@@ -60,7 +62,6 @@
 
         if (_movie != null)
             _imdbMovie = await DataLoader.GetImdbMovieByIdImdbAsync(_movie.IdImdb);
-        
     }
 
 }

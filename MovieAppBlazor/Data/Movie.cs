@@ -2,17 +2,15 @@
 
 namespace MovieAppBlazor.Data
 {
-    //title -> filmId
-    //[Table("movies")]
-    public class Movie
+    public sealed class Movie
     {
         public int Id { get; set; }
         public string IdImdb { get; set; }
-        public virtual HashSet<Person>? Persons { get; set; }
-        public virtual HashSet<Tag>? Tags { get; set; }
+        public HashSet<Person>? Persons { get; set; }
+        public HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }
-        public virtual List<Movie>? Top { get; set; }
-        public virtual List<Title> Titles { get; set; }
+        public List<Movie>? Top { get; set; }
+        public List<Title> Titles { get; set; }
 
         public string OriginalTitle { get; set; }
 
@@ -58,9 +56,6 @@ namespace MovieAppBlazor.Data
 
             if (Tags != null && Tags.Count != 0)
             {
-                /*builder.Append("Tags:\n");
-                Tags.ToList().ForEach(x => builder.Append(string.Concat(x, "\n")));*/
-
                 builder.Append("Tags count: " + Tags.Count + '\n');
             }
             else
@@ -69,7 +64,7 @@ namespace MovieAppBlazor.Data
             }
 
             builder.Append("Rating: ");
-            if (Rating != -1)
+            if (Math.Abs(Rating - (-1)) > float.Epsilon)
             {
                 builder.Append(Rating);
                 builder.Append('\n');

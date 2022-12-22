@@ -1,51 +1,62 @@
 ﻿@inject DataLoader DataLoader
 
-<hr/>
-<div class="d-inline-flex">
-    <div class="p-2 align-content-center">
-        <h3>@Index</h3>
-    </div>
-    @if (!string.IsNullOrEmpty(_imdbMovie?.Poster))
-    {
-        <img class="image" src="@_imdbMovie.Poster" href="/movie/@Movie.Id"/>
-    }
-    <div class="m-lg-2 row">
-        <a href="/movie/@Movie.Id" class="text-decoration-none">
-            <h2>@Movie.OriginalTitle</h2>
-        </a>
-        <div class="d-inline-flex">
-            <p>Tags: </p>
-            @foreach (var item in Movie.Tags.Take(5))
+@if (Movie != null)
+{
+    <hr/>
+    <div class="d-inline-flex">
+        <div class="p-2 align-content-center">
+            <h3>@Index</h3>
+        </div>
+        @if (!string.IsNullOrEmpty(_imdbMovie?.Poster))
+        {
+            <img class="image" src="@_imdbMovie.Poster" href="/movie/@Movie.Id"
+                 alt="https://cspromogame.ru//storage/upload_images/avatars/4137.jpg"/>
+        }
+        <div class="m-lg-2 row">
+            <a href="/movie/@Movie.Id" class="text-decoration-none">
+                <h2>@Movie.OriginalTitle</h2>
+            </a>
+            @if (Movie.Tags != null)
             {
-                <a href="tag/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
+                <div class="d-inline-flex">
+                    <p>Tags: </p>
+                    @foreach (var item in Movie.Tags.Take(5))
+                    {
+                        <a href="tag/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
+                    }
+                </div>
+            }
+            @if (Movie.Persons != null)
+            {
+                <div class="d-inline-flex">
+                    <p>Persons: </p>
+                    @foreach (var item in Movie.Persons.Take(5))
+                    {
+                        <a href="person/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
+                    }
+                </div>
             }
         </div>
-        <div class="d-inline-flex">
-            <p>Persons: </p>
-            @foreach (var item in Movie.Persons.Take(5))
-            {
-                <a href="person/@item.Id" class="mx-1 text-decoration-none">@item.Name</a>
-            }
+        <div class="float-end">
+            <h4>@Movie.Rating</h4>
         </div>
     </div>
-    <div class="float-end">
-        <h4>@Movie.Rating</h4>
-    </div>
-</div>
+}
 
 @code {
 
     [Parameter]
-    public Movie Movie { get; set; }
+    public Movie? Movie { get; set; }
 
     [Parameter]
     public int Index { get; set; }
-    
+
     private ImdbMovie? _imdbMovie;
 
     protected override async Task OnParametersSetAsync()
     {
-        _imdbMovie = await DataLoader.GetImdbMovieByIdImdbAsync(Movie.IdImdb);
+        if (Movie != null)
+            _imdbMovie = await DataLoader.GetImdbMovieByIdImdbAsync(Movie.IdImdb);
     }
 
 }

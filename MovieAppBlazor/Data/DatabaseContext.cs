@@ -5,11 +5,11 @@ namespace MovieAppBlazor.Data;
 
 public class DatabaseContext : DbContext
 {
-    public DbSet<Person?> Persons { get; set; }
+    public DbSet<Person> Persons { get; set; }
     public DbSet<Movie> Movies { get; set; }
-    public DbSet<Tag?> Tags { get; set; }
+    public DbSet<Tag> Tags { get; set; }
     public DbSet<Title> Titles { get; set; }
-    
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         var connection = new NpgsqlConnection(new NpgsqlConnectionStringBuilder()

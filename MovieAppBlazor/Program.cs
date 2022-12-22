@@ -1,18 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using MovieAppBlazor.Data;
-using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
-
-var connection = new NpgsqlConnection(new NpgsqlConnectionStringBuilder()
-{
-    Host = "localhost",
-    Port = 5432,
-    Database = "bigDataAppDB",
-    Username = "test",
-    Password = "12345"
-}.ToString());
 
 // Add services to the container.
 builder.Services.AddRazorPages();

@@ -6,12 +6,16 @@
     <div class="d-inline-flex">
         @if (!string.IsNullOrEmpty(_personImage))
         {
-            <img src="@_personImage" width="400px" height="400px"/>
+            <img src="@_personImage" width="400px" height="400px"
+                 alt="https://cspromogame.ru//storage/upload_images/avatars/4137.jpg"/>
         }
         <div class="row mx-3">
             <h3>@_person.Name</h3>
             <p>Фильмы</p>
-            <MovieList Movies="_movies.OrderByDescending(m => m.Rating)"></MovieList>
+            @if (_movies != null)
+            {
+                <MovieList Movies="@(_movies.OrderByDescending(m => m.Rating))"></MovieList>
+            }
         </div>
     </div>
 }
@@ -22,14 +26,19 @@
     public int PersonId { get; set; }
 
     private Person? _person;
-    private string _personImage;
+    private string? _personImage;
+
     private IEnumerable<Movie>? _movies;
-    
+
     protected override async Task OnParametersSetAsync()
     {
         _person = await DataLoader.GetPersonByIdAsync(PersonId);
-        _personImage = await DataLoader.GetPersonImageByNameAsync(_person.Name);
-        _movies = await DataLoader.GetMoviesByPersonNameAsync(_person.Name);
+
+        if (_person != null)
+        {
+            _personImage = await DataLoader.GetPersonImageByNameAsync(_person.Name);
+            _movies = await DataLoader.GetMoviesByPersonNameAsync(_person.Name);
+        }
     }
 
 }

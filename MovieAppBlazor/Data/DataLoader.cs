@@ -7,9 +7,8 @@ namespace MovieAppBlazor.Data;
 
 public class DataLoader
 {
-    private const string ApiKey = "6afd6859";
+    private const string ApiKey = "94a4aec7";
     private const string ApiUrl = $"http://www.omdbapi.com/?apikey={ApiKey}";
-    private const string PosterApiUrl = $"http://img.omdbapi.com/?apikey={ApiKey}";
 
     private readonly DatabaseContext _context;
 
@@ -33,14 +32,16 @@ public class DataLoader
 
     public async Task<Movie?> GetMovieByIdAsync(int movieId)
     {
-        return await _context.Movies.Where(m => m.Id == movieId)
+        return await _context.Movies
+            .Where(m => m.Id == movieId)
             .Include(m => m.Tags)
             .Include(m => m.Persons)
-            .AsSplitQuery()
             .Include(m => m.Top)
             .ThenInclude(m => m.Persons)
             .Include(m => m.Top)
             .ThenInclude(m => m.Tags)
+            .AsNoTracking()
+            .AsSplitQuery()
             .FirstOrDefaultAsync();
     }
 
@@ -56,18 +57,19 @@ public class DataLoader
 
     public async Task<Person?> GetPersonByIdAsync(int personId)
     {
-        return await _context.Persons.FirstOrDefaultAsync(person => person.Id == personId);
+        return await _context.Persons
+            .FirstOrDefaultAsync(person => person.Id == personId);
     }
-
-    [SuppressMessage("ReSharper.DPA", "DPA0000: DPA issues")]
+    
     public async Task<Tag?> GetTagByIdAsync(int tagId)
     {
-        return await _context.Tags.FirstOrDefaultAsync(tag => tag.Id == tagId);
+        return await _context.Tags
+            .FirstOrDefaultAsync(tag => tag.Id == tagId);
     }
 
-    public async Task<ImdbMovie?> GetImdbMovieByIdImdbAsync(string idImbd)
+    public async Task<ImdbMovie?> GetImdbMovieByIdImdbAsync(string idImdb)
     {
-        /*var url = string.Concat(ApiUrl, "&i=", idImbd);
+        var url = string.Concat(ApiUrl, "&i=", idImdb);
 
         var client = new HttpClient();
         var request = new HttpRequestMessage
@@ -82,10 +84,9 @@ public class DataLoader
             {
                 var jsonString = await response.Content.ReadAsStringAsync();
 
-                ImdbMovie? movie = JsonConvert.DeserializeObject<ImdbMovie>(jsonString);
-                return movie;
+                return JsonConvert.DeserializeObject<ImdbMovie>(jsonString);
             }
-        }*/
+        }
 
         return null;
     }
@@ -93,10 +94,10 @@ public class DataLoader
     public async Task<IEnumerable<Movie>?> GetMoviesByTagNameAsync(string tagName)
     {
         return await _context.Movies
-            .AsNoTracking()
             .Where(m => m.Tags.Any(t => t.Name == tagName))
             .Include(m => m.Persons)
             .Include(m => m.Tags)
+            .AsNoTracking()
             .ToListAsync();
     }
 
@@ -119,11 +120,11 @@ public class DataLoader
     public async Task<IEnumerable<Person>?> GetPersonsByName(string inputLine)
     {
         return await _context.Persons
-            .Where(t => t.Name.Contains(inputLine))
+            .Where(t => t.Name == inputLine)
             .ToListAsync();
     }
 
-    public async Task<string> GetPersonImageByNameAsync(string name)
+    public async Task<string?> GetPersonImageByNameAsync(string name)
     {
         var apiLib = new ApiLib("k_mwrcvcj7");
 

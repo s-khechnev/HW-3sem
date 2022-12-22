@@ -7,7 +7,7 @@
     <input class="form-control" type="text" placeholder="Фильмы, Тэги, Персоны"
            @bind="@_inputLine" style="text-align: center">
     <span class="input-group-btn">
-        <button class="btn btn-primary" @onclick="OnSearchClick" style="margin-left: 10px">Поиск</button>
+        <button class="btn btn-primary m-lg-1" @onclick="OnSearchClick">Поиск</button>
     </span>
 </div>
 <hr/>
@@ -61,6 +61,11 @@
 
     private async Task OnSearchClick()
     {
+        if (string.IsNullOrEmpty(_inputLine))
+        {
+            return;
+        }
+        
         _isDisplayBestMovies = false;
         _movies = await DataLoader.GetMoviesByTitleAsync(_inputLine);
         _tags = await DataLoader.GetTagsByName(_inputLine);
