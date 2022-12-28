@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace BigDataApp.Entities
@@ -7,7 +8,9 @@ namespace BigDataApp.Entities
     //[Table("movies")]
     public class Movie
     {
+        [Key]
         public int Id { get; set; }
+        public string IdImdb { get; set; }
         public virtual HashSet<Person>? Persons { get; set; }
         public virtual HashSet<Tag>? Tags { get; set; }
         public float Rating { get; set; }

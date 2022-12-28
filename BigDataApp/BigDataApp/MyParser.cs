@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using BigDataApp.Entities;
@@ -27,7 +26,7 @@ public static class MyParser
     public static Dictionary<string, Person> _personIdPerson = new();
     public static List<Title> Titles = new();
 
-    private static int _personId = 1;
+    private static int _personIdInt = 1;
 
     [SuppressMessage("ReSharper.DPA", "DPA0000: DPA issues")]
     public static void Run()
@@ -89,44 +88,45 @@ public static class MyParser
 
                     /*if (lang == "en" || lang == "ru" || region == "US" || region == "RU" || region == "GB")
                     {*/
-                        if (!_filmIdMovie.ContainsKey(filmId))
-                        {
-                            var movie = new Movie();
-                            movie.Id = movieId;
-                            movieId++;
-                            movie.Titles = new List<Title>();
-                            movie.OriginalTitle = filmTitle;
+                    if (!_filmIdMovie.ContainsKey(filmId))
+                    {
+                        var movie = new Movie();
+                        movie.Id = movieId;
+                        movie.IdImdb = filmId;
+                        movieId++;
+                        movie.Titles = new List<Title>();
+                        movie.OriginalTitle = filmTitle;
 
-                            _filmIdMovie.Add(filmId, movie);
-                            /*lock (context)
-                            {
-                                context.Add(movie);    
-                            }*/
-                        }
-
-                        if (_filmIdFilmTitles.ContainsKey(filmId))
+                        _filmIdMovie.Add(filmId, movie);
+                        /*lock (context)
                         {
-                            _filmIdFilmTitles[filmId].Add(filmTitle);
-                        }
-                        else
-                        {
-                            _filmIdFilmTitles[filmId] = new List<string> { filmTitle };
-                        }
+                            context.Add(movie);    
+                        }*/
+                    }
 
-                        var title = new Title() { Id = titleId, Name = filmTitle, MovieId = _filmIdMovie[filmId].Id };
-                        titleId++;
-                        Titles.Add(title);
-                        _filmIdMovie[filmId].Titles.Add(title);
+                    if (_filmIdFilmTitles.ContainsKey(filmId))
+                    {
+                        _filmIdFilmTitles[filmId].Add(filmTitle);
+                    }
+                    else
+                    {
+                        _filmIdFilmTitles[filmId] = new List<string> { filmTitle };
+                    }
 
-                        if (!_filmTitleFilmId.ContainsKey(filmTitle))
-                        {
-                            _filmTitleFilmId.Add(filmTitle, filmId);
-                        }
+                    var title = new Title() { Id = titleId, Name = filmTitle, MovieId = _filmIdMovie[filmId].Id };
+                    titleId++;
+                    Titles.Add(title);
+                    _filmIdMovie[filmId].Titles.Add(title);
 
-                        if (isOriginalTitle)
-                        {
-                            _filmIdMovie[filmId].OriginalTitle = filmTitle;
-                        }
+                    if (!_filmTitleFilmId.ContainsKey(filmTitle))
+                    {
+                        _filmTitleFilmId.Add(filmTitle, filmId);
+                    }
+
+                    if (isOriginalTitle)
+                    {
+                        _filmIdMovie[filmId].OriginalTitle = filmTitle;
+                    }
                     //}
                 }
             }
@@ -156,12 +156,13 @@ public static class MyParser
                     index = lineSpan.IndexOf('\t');
                     var personName = lineSpan.Slice(0, index).ToString();
 
-                    var person = new Person() { Name = personName };
-                    person.Id = _personId;
+                    var person = new Person() { Name = personName, IdImdb = personId};
+                    person.Id = _personIdInt;
                     lock (person)
                     {
-                        _personId++;    
+                        _personIdInt++;
                     }
+
                     _personIdPerson[personId] = person;
                     /*lock (context)
                     {
@@ -541,9 +542,9 @@ public static class MyParser
 
             lock (filmIdTopsIds)
             {
-                filmIdTopsIds.Add(filmId, new List<string>());    
+                filmIdTopsIds.Add(filmId, new List<string>());
             }
-            
+
             var orderedDict = estimationFilmsIds.OrderByDescending(x => x.Key);
             foreach (var estMovie in orderedDict)
             {
@@ -551,8 +552,9 @@ public static class MyParser
                 {
                     lock (filmIdTopsIds)
                     {
-                        filmIdTopsIds[filmId].Add(film);    
+                        filmIdTopsIds[filmId].Add(film);
                     }
+
                     k++;
                     if (k == 10)
                         break;
@@ -598,23 +600,23 @@ public static class MyParser
                     foreach (var personId in _filmIdCategoryPersonsIds[filmId][categoryPersonsId.Key])
                     {
                         Person? person;
-                        lock (movie)
+                        lock (_personIdPerson)
                         {
                             if (!_personIdPerson.ContainsKey(personId))
                             {
-                                person = new Person() { Name = personId };
-                                person.Id = _personId;
-                                _personId++;
+                                person = new Person() { Name = personId, IdImdb = personId };
+                                person.Id = _personIdInt;
+                                _personIdInt++;
                                 _personIdPerson.Add(personId, person);
                             }
-                        }
-
-                        lock (movie)
-                        {
-                            person = _personIdPerson[personId];
+                            else
+                            {
+                                person = _personIdPerson[personId];
+                            }
                             person.Category = categoryPersonsId.Key;
-                            movie.Persons.Add(_personIdPerson[personId]);
                         }
+                        
+                        movie.Persons.Add(_personIdPerson[personId]);
                         //context.Update(person);
                     }
                 }
@@ -651,18 +653,18 @@ public static class MyParser
                     foreach (var personId in _filmIdCategoryPersonsIds[filmId][keyPersonCategory])
                     {
                         Person? person;
-                        lock (filmId)
+                        lock (_personIdPerson)
                         {
                             if (!_personIdPerson.ContainsKey(personId))
                             {
-                                person = new Person() { Name = personId };
-                                person.Id = MyParser._personId;
-                                MyParser._personId++;
+                                person = new Person() { Name = personId, IdImdb = personId };
+                                person.Id = MyParser._personIdInt;
+                                MyParser._personIdInt++;
                                 _personIdPerson.Add(personId, person);
                             }
                         }
 
-                        lock (filmId)
+                        lock (_personIdPerson)
                         {
                             person = _personIdPerson[personId];
                         }

@@ -6,6 +6,7 @@ namespace BigDataApp;
 public class Person
 {
     public int Id { get; set; }
+    public string IdImdb { get; set; }
     public string Name { get; set; }
     public string? Category { get; set; }
     public virtual HashSet<Movie>? Movies { get; set; }

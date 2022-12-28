@@ -48,6 +48,7 @@ public static class Program
                 {
                     writer.StartRow();
                     writer.Write(movie.Id, NpgsqlDbType.Integer);
+                    writer.Write(movie.IdImdb, NpgsqlDbType.Text);
                     writer.Write(movie.Rating, NpgsqlDbType.Real);
                     writer.Write(movie.OriginalTitle, NpgsqlDbType.Text);
                 }
@@ -61,6 +62,7 @@ public static class Program
                 {
                     writer.StartRow();
                     writer.Write(person.Id, NpgsqlDbType.Integer);
+                    writer.Write(person.IdImdb, NpgsqlDbType.Text);
                     writer.Write(person.Name, NpgsqlDbType.Text);
                     writer.Write(person.Category, NpgsqlDbType.Text);
                 }
@@ -193,45 +195,11 @@ public static class Program
 
                     line = Console.ReadLine();
 
-                    if (string.IsNullOrEmpty(line))
-                        break;
-
-                    Stopwatch stopwatch = new();
-                    stopwatch.Start();
-
-                    var titles = context.Titles
-                        .Include(x => x.Movie)
-                        .Where(x => x.Name.ToLower() == line.ToLower())
-                        .GroupBy(x => x.MovieId).Select(x => x.First());
-
-                    if (!titles.Any())
+                    var movies1 = GetMovies(line);
+                    
+                    foreach (var movie in movies1)
                     {
-                        Console.WriteLine("Not found");
-                        break;
-                    }
-
-                    Console.WriteLine("Фильмы с title = " + line);
-
-                    foreach (var title in titles)
-                    {
-                        var movieId = title.MovieId;
-
-                        using (var ctx = new DataContext())
-                        {
-                            var movieEntity = ctx.Movies
-                                .Where(movie => movieId == movie.Id)
-                                .Include(x => x.Top)!
-                                .ThenInclude(x => x.Persons)
-                                .Include(x => x.Top)!
-                                .ThenInclude(x => x.Tags)
-                                .AsSplitQuery()
-                                .Include(x => x.Persons)
-                                .Include(x => x.Tags)
-                                .Single();
-
-                            Console.WriteLine(movieEntity);
-                            Console.WriteLine();
-                        }
+                        Console.WriteLine(movie);
                     }
 
                     break;
@@ -291,5 +259,53 @@ public static class Program
 
             Console.WriteLine();
         }
+    }
+
+    public static List<Movie> GetMovies(string? line)
+    {
+        var movies = new List<Movie>();
+        using (var context = new DataContext())
+        {
+            if (string.IsNullOrEmpty(line))
+                return null;
+
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
+
+            var titles = context.Titles
+                .Include(x => x.Movie)
+                .Where(x => x.Name.ToLower() == line.ToLower())
+                .GroupBy(x => x.MovieId).Select(x => x.First());
+
+            if (!titles.Any())
+            {
+                //Console.WriteLine("Not found");
+                return null;
+            }
+
+            //Console.WriteLine("Фильмы с title = " + line);
+            foreach (var title in titles)
+            {
+                var movieId = title.MovieId;
+
+                using (var ctx = new DataContext())
+                {
+                    var movieEntity = ctx.Movies
+                        .Where(movie => movieId == movie.Id)
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Persons)
+                        .AsSplitQuery()
+                        .Include(x => x.Top)!
+                        .ThenInclude(x => x.Tags)
+                        .AsSplitQuery()
+                        .Include(x => x.Persons)
+                        .Include(x => x.Tags)
+                        .Single();
+
+                    movies.Add(movieEntity);
+                }
+            }
+        }
+        return movies;
     }
 }
